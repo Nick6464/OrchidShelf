@@ -1,0 +1,13 @@
+# Scheduler input helpers
+pump_1_scheduler_enable:
+  name: "Pump 1 Scheduler Enable"
+  icon: mdi:timer-check
+pump_2_scheduler_enable:
+  name: "Pump 2 Scheduler Enable"
+  icon: mdi:timer-check
+pump_3_scheduler_enable:
+  name: "Pump 3 Scheduler Enable"  
+  icon: mdi:timer-check
+pump_4_scheduler_enable:
+  name: "Pump 4 Scheduler Enable"
+  icon: mdi:timer-check

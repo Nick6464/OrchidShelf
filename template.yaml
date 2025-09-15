@@ -1,0 +1,20 @@
+# Template sensors for enhanced pump status (optional - ESPHome already provides status)
+- sensor:
+  - name: "System Status Summary"
+    unique_id: system_status_summary
+    state: >
+      {% set pumps = [
+        states('text_sensor.floodshelf_pump_1_status'),
+        states('text_sensor.floodshelf_pump_2_status'),
+        states('text_sensor.floodshelf_pump_3_status'),
+        states('text_sensor.floodshelf_pump_4_status')
+      ] %}
+      {% set active = pumps | reject('==', 'Idle') | list | length %}
+      {% if active == 0 %}
+        All Zones Idle
+      {% elif active == 1 %}
+        {{ active }} Zone Active
+      {% else %}
+        {{ active }} Zones Active
+      {% endif %}
+    icon: mdi:water-pump

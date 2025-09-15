@@ -1,0 +1,468 @@
+views:
+  - title: System Overview
+    sections:
+      - type: grid
+        columns: 3
+        cards:
+          - type: heading
+            heading: Orchid Shelf Flood Irrigation System
+          - type: entities
+            title: System Status
+            entities:
+              - entity: sensor.floodshelf_bin_1_status
+                name: Zone 1 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_1_next_cycle_countdown
+                name: Zone 1 Next Watering Time
+                icon: mdi:timer-sand
+              - entity: sensor.floodshelf_bin_2_status
+                name: Zone 2 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_2_next_cycle_countdown
+                name: Zone 2 Next Watering Time
+                icon: mdi:timer-sand
+              - entity: sensor.floodshelf_bin_3_status
+                name: Zone 3 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_3_next_cycle_countdown
+                name: Zone 3 Next Watering Time
+                icon: mdi:timer-sand
+              - entity: sensor.floodshelf_bin_4_status
+                name: Zone 4 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_4_next_cycle_countdown
+                name: Zone 4 Next Watering Time
+                icon: mdi:timer-sand
+            state_color: true
+          - type: entities
+            title: Master Controls
+            entities:
+              - entity: switch.floodshelf_531e4c_all_pumps_on_off
+                name: All Pumps Master Switch
+                icon: mdi:water-pump
+              - entity: number.floodshelf_daily_watering_hour_24h_format
+                name: Daily Watering Hour (24h)
+                icon: mdi:clock-time-eight
+            state_color: true
+          - type: entities
+            title: Zone Enable/Auto Schedule Controls
+            entities:
+              - entity: switch.floodshelf_bin_1_enable
+                name: Zone 1 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+              - entity: switch.floodshelf_bin_2_enable
+                name: Zone 2 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+              - entity: switch.floodshelf_bin_3_enable
+                name: Zone 3 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+              - entity: switch.floodshelf_bin_4_enable
+                name: Zone 4 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+            state_color: true
+          - type: entities
+            title: Quick Cycle Triggers
+            entities:
+              - entity: button.floodshelf_start_bin_1_cycle
+                name: Start Zone 1 Cycle
+                icon: mdi:play-circle
+              - entity: button.floodshelf_start_bin_2_cycle
+                name: Start Zone 2 Cycle
+                icon: mdi:play-circle
+              - entity: button.floodshelf_start_bin_3_cycle
+                name: Start Zone 3 Cycle
+                icon: mdi:play-circle
+              - entity: button.floodshelf_start_bin_4_cycle
+                name: Start Zone 4 Cycle
+                icon: mdi:play-circle
+            state_color: true
+        column_span: 3
+  - title: Zone 1 Control
+    sections:
+      - type: grid
+        columns: 1
+        cards:
+          - type: heading
+            heading: Zone 1 - Pump Control (Separate Fill/Drain Speeds & Auto Schedule)
+          - type: entities
+            title: Zone 1 Control
+            entities:
+              - entity: sensor.floodshelf_bin_1_status
+                name: Current Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_1_next_cycle_countdown
+                name: Next Watering Time In
+                icon: mdi:timer-sand
+              - entity: switch.floodshelf_peristaltic_pump_1
+                name: Pump On/Off
+                icon: mdi:water-pump
+              - entity: switch.floodshelf_531e4c_pump_1_reverse
+                name: Reverse Direction
+                icon: mdi:swap-horizontal
+            state_color: true
+          - type: entities
+            title: Zone 1 Speed Settings
+            entities:
+              - entity: select.floodshelf_pump_1_fill_speed
+                name: Fill Speed
+                icon: mdi:water-plus
+              - entity: select.floodshelf_pump_1_drain_speed
+                name: Drain Speed
+                icon: mdi:water-minus
+            state_color: true
+          - type: entities
+            title: Zone 1 Cycle Timing Settings
+            entities:
+              - entity: number.floodshelf_bin_1_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
+              - entity: number.floodshelf_bin_1_soak_duration_minutes
+                name: Soak Duration (minutes)
+                icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_1_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_1_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
+          - type: entities
+            title: Zone 1 Enable & Auto Schedule
+            entities:
+              - entity: switch.floodshelf_bin_1_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+            state_color: true
+          - type: entities
+            title: Zone 1 Cycle Control
+            entities:
+              - entity: button.floodshelf_start_bin_1_cycle
+                name: Start Manual Cycle Now
+                icon: mdi:play-circle
+            state_color: true
+        column_span: 3
+  - title: Zone 2 Control
+    sections:
+      - type: grid
+        columns: 1
+        cards:
+          - type: heading
+            heading: Zone 2 - Pump Control (Separate Fill/Drain Speeds & Auto Schedule)
+          - type: entities
+            title: Zone 2 Control
+            entities:
+              - entity: sensor.floodshelf_bin_2_status
+                name: Current Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_2_next_cycle_countdown
+                name: Next Watering Time In
+                icon: mdi:timer-sand
+              - entity: switch.floodshelf_peristaltic_pump_2
+                name: Pump On/Off
+                icon: mdi:water-pump
+              - entity: switch.floodshelf_531e4c_pump_2_reverse
+                name: Reverse Direction
+                icon: mdi:swap-horizontal
+            state_color: true
+          - type: entities
+            title: Zone 2 Speed Settings
+            entities:
+              - entity: select.floodshelf_pump_2_fill_speed
+                name: Fill Speed
+                icon: mdi:water-plus
+              - entity: select.floodshelf_pump_2_drain_speed
+                name: Drain Speed
+                icon: mdi:water-minus
+            state_color: true
+          - type: entities
+            title: Zone 2 Cycle Timing Settings
+            entities:
+              - entity: number.floodshelf_bin_2_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
+              - entity: number.floodshelf_bin_2_soak_duration_minutes
+                name: Soak Duration (minutes)
+                icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_2_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_2_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
+          - type: entities
+            title: Zone 2 Enable & Auto Schedule
+            entities:
+              - entity: switch.floodshelf_bin_2_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+            state_color: true
+          - type: entities
+            title: Zone 2 Cycle Control
+            entities:
+              - entity: button.floodshelf_start_bin_2_cycle
+                name: Start Manual Cycle Now
+                icon: mdi:play-circle
+            state_color: true
+        column_span: 3
+  - title: Zone 3 Control
+    sections:
+      - type: grid
+        columns: 1
+        cards:
+          - type: heading
+            heading: Zone 3 - Pump Control (Separate Fill/Drain Speeds & Auto Schedule)
+          - type: entities
+            title: Zone 3 Control
+            entities:
+              - entity: sensor.floodshelf_bin_3_status
+                name: Current Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_3_next_cycle_countdown
+                name: Next Watering Time In
+                icon: mdi:timer-sand
+              - entity: switch.floodshelf_peristaltic_pump_3
+                name: Pump On/Off
+                icon: mdi:water-pump
+              - entity: switch.floodshelf_531e4c_pump_3_reverse
+                name: Reverse Direction
+                icon: mdi:swap-horizontal
+            state_color: true
+          - type: entities
+            title: Zone 3 Speed Settings
+            entities:
+              - entity: select.floodshelf_pump_3_fill_speed
+                name: Fill Speed
+                icon: mdi:water-plus
+              - entity: select.floodshelf_pump_3_drain_speed
+                name: Drain Speed
+                icon: mdi:water-minus
+            state_color: true
+          - type: entities
+            title: Zone 3 Cycle Timing Settings
+            entities:
+              - entity: number.floodshelf_bin_3_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
+              - entity: number.floodshelf_bin_3_soak_duration_minutes
+                name: Soak Duration (minutes)
+                icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_3_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_3_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
+          - type: entities
+            title: Zone 3 Enable & Auto Schedule
+            entities:
+              - entity: switch.floodshelf_bin_3_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+            state_color: true
+          - type: entities
+            title: Zone 3 Cycle Control
+            entities:
+              - entity: button.floodshelf_start_bin_3_cycle
+                name: Start Manual Cycle Now
+                icon: mdi:play-circle
+            state_color: true
+        column_span: 3
+  - title: Zone 4 Control
+    sections:
+      - type: grid
+        columns: 1
+        cards:
+          - type: heading
+            heading: Zone 4 - Pump Control (Separate Fill/Drain Speeds & Auto Schedule)
+          - type: entities
+            title: Zone 4 Control
+            entities:
+              - entity: sensor.floodshelf_bin_4_status
+                name: Current Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_4_next_cycle_countdown
+                name: Next Watering Time In
+                icon: mdi:timer-sand
+              - entity: switch.floodshelf_peristaltic_pump_4
+                name: Pump On/Off
+                icon: mdi:water-pump
+              - entity: switch.floodshelf_531e4c_pump_4_reverse
+                name: Reverse Direction
+                icon: mdi:swap-horizontal
+            state_color: true
+          - type: entities
+            title: Zone 4 Speed Settings
+            entities:
+              - entity: select.floodshelf_pump_4_fill_speed
+                name: Fill Speed
+                icon: mdi:water-plus
+              - entity: select.floodshelf_pump_4_drain_speed
+                name: Drain Speed
+                icon: mdi:water-minus
+            state_color: true
+          - type: entities
+            title: Zone 4 Cycle Timing Settings
+            entities:
+              - entity: number.floodshelf_bin_4_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
+              - entity: number.floodshelf_bin_4_soak_duration_minutes
+                name: Soak Duration (minutes)
+                icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_4_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_4_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
+          - type: entities
+            title: Zone 4 Enable & Auto Schedule
+            entities:
+              - entity: switch.floodshelf_bin_4_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+            state_color: true
+          - type: entities
+            title: Zone 4 Cycle Control
+            entities:
+              - entity: button.floodshelf_start_bin_4_cycle
+                name: Start Manual Cycle Now
+                icon: mdi:play-circle
+            state_color: true
+        column_span: 3
+  - title: All Zones
+    sections:
+      - type: grid
+        columns: 2
+        cards:
+          - type: heading
+            heading: >-
+              Complete System Control (Separate Fill/Drain Speeds & Auto
+              Schedule)
+          - type: entities
+            title: All Zone Status
+            entities:
+              - entity: sensor.floodshelf_bin_1_status
+                name: Zone 1 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_1_next_cycle_countdown
+                name: Zone 1 Next Watering Time
+                icon: mdi:timer-sand
+              - entity: sensor.floodshelf_bin_2_status
+                name: Zone 2 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_2_next_cycle_countdown
+                name: Zone 2 Next Watering Time
+                icon: mdi:timer-sand
+              - entity: sensor.floodshelf_bin_3_status
+                name: Zone 3 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_3_next_cycle_countdown
+                name: Zone 3 Next Watering Time
+                icon: mdi:timer-sand
+              - entity: sensor.floodshelf_bin_4_status
+                name: Zone 4 Status
+                icon: mdi:state-machine
+              - entity: sensor.floodshelf_bin_4_next_cycle_countdown
+                name: Zone 4 Next Watering Time
+                icon: mdi:timer-sand
+            state_color: true
+          - type: entities
+            title: Individual Pump Controls
+            entities:
+              - entity: switch.floodshelf_peristaltic_pump_1
+                name: Zone 1 Pump
+                icon: mdi:water-pump
+              - entity: switch.floodshelf_peristaltic_pump_2
+                name: Zone 2 Pump
+                icon: mdi:water-pump
+              - entity: switch.floodshelf_peristaltic_pump_3
+                name: Zone 3 Pump
+                icon: mdi:water-pump
+              - entity: switch.floodshelf_peristaltic_pump_4
+                name: Zone 4 Pump
+                icon: mdi:water-pump
+            state_color: true
+          - type: entities
+            title: Direction Controls
+            entities:
+              - entity: switch.floodshelf_531e4c_pump_1_reverse
+                name: Zone 1 Reverse
+                icon: mdi:swap-horizontal
+              - entity: switch.floodshelf_531e4c_pump_2_reverse
+                name: Zone 2 Reverse
+                icon: mdi:swap-horizontal
+              - entity: switch.floodshelf_531e4c_pump_3_reverse
+                name: Zone 3 Reverse
+                icon: mdi:swap-horizontal
+              - entity: switch.floodshelf_531e4c_pump_4_reverse
+                name: Zone 4 Reverse
+                icon: mdi:swap-horizontal
+            state_color: true
+          - type: entities
+            title: All Cycle Triggers
+            entities:
+              - entity: button.floodshelf_start_bin_1_cycle
+                name: Start Zone 1 Cycle
+                icon: mdi:play-circle
+              - entity: button.floodshelf_start_bin_2_cycle
+                name: Start Zone 2 Cycle
+                icon: mdi:play-circle
+              - entity: button.floodshelf_start_bin_3_cycle
+                name: Start Zone 3 Cycle
+                icon: mdi:play-circle
+              - entity: button.floodshelf_start_bin_4_cycle
+                name: Start Zone 4 Cycle
+                icon: mdi:play-circle
+            state_color: true
+          - type: entities
+            title: Zone Enable & Auto Schedule Controls
+            entities:
+              - entity: switch.floodshelf_bin_1_enable
+                name: Zone 1 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+              - entity: switch.floodshelf_bin_2_enable
+                name: Zone 2 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+              - entity: switch.floodshelf_bin_3_enable
+                name: Zone 3 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+              - entity: switch.floodshelf_bin_4_enable
+                name: Zone 4 Enable & Auto Schedule
+                icon: mdi:timer-check-outline
+              - entity: number.floodshelf_daily_watering_hour_24h_format
+                name: Daily Watering Hour (24h)
+                icon: mdi:clock-time-eight
+            state_color: true
+          - type: entities
+            title: Fill Speed Controls
+            entities:
+              - entity: select.floodshelf_pump_1_fill_speed
+                name: Zone 1 Fill Speed
+                icon: mdi:water-plus
+              - entity: select.floodshelf_pump_2_fill_speed
+                name: Zone 2 Fill Speed
+                icon: mdi:water-plus
+              - entity: select.floodshelf_pump_3_fill_speed
+                name: Zone 3 Fill Speed
+                icon: mdi:water-plus
+              - entity: select.floodshelf_pump_4_fill_speed
+                name: Zone 4 Fill Speed
+                icon: mdi:water-plus
+            state_color: true
+          - type: entities
+            title: Drain Speed Controls
+            entities:
+              - entity: select.floodshelf_pump_1_drain_speed
+                name: Zone 1 Drain Speed
+                icon: mdi:water-minus
+              - entity: select.floodshelf_pump_2_drain_speed
+                name: Zone 2 Drain Speed
+                icon: mdi:water-minus
+              - entity: select.floodshelf_pump_3_drain_speed
+                name: Zone 3 Drain Speed
+                icon: mdi:water-minus
+              - entity: select.floodshelf_pump_4_drain_speed
+                name: Zone 4 Drain Speed
+                icon: mdi:water-minus
+            state_color: true
+        column_span: 3

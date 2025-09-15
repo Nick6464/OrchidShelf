@@ -1,0 +1,19 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Automations managed through UI (automations.yaml)
+script: !include scripts.yaml  
+scene: !include scenes.yaml
+
+# Scheduler integration for advanced scheduling
+scheduler:
+
+# Input helpers for scheduling controls
+input_boolean: !include input_boolean.yaml
+
+# Template sensors for enhanced pump status (optional - ESPHome already provides status)
+template: !include template.yaml
