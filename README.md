@@ -4,13 +4,13 @@ A Home Assistant-controlled flood irrigation system designed for orchids and oth
 
 ## What It Does
 
-This system automatically waters your plants using a flood irrigation method. It fills each tray with water, lets the plants soak, then drains everything back to a central reservoir. Water is reused and cycles run on programmed schedules.
+This system automatically waters your plants using a flood irrigation method. It fills each tray with water, lets the plants soak, then drains everything back to a central reservoir. Water is reused and cycles run on cron-based schedules with intelligent queue management to prevent conflicts.
 
 ## How It Works
 
 The system consists of 4 independent zones each with its own pump and flood tray, all connected to a central water reservoir. An ESP32 controller running ESPHome manages everything through Home Assistant. The pumps are reversible - they run forward to fill trays and reverse to drain them back to the reservoir.
 
-Each zone cycles through four phases: Fill (pump pushes water to tray), Soak (water sits while plants absorb it), Drain (pump reverses to pull water back), and Wait (dry period until next cycle). Since all zones operate independently, you can run different schedules for different plant types simultaneously.
+Each zone cycles through four phases: Fill (pump pushes water to tray), Soak (water sits while plants absorb it), Drain (pump reverses to pull water back), and Wait (dry period until next cycle). A queue system ensures only one zone operates at a time, queuing any conflicting schedules and processing them in order once the active cycle completes.
 
 ## Why Use Flood Irrigation?
 
@@ -18,16 +18,16 @@ Flood irrigation mimics the natural wet/dry cycles that orchids and many other p
 
 ## Configuration
 
-Each pump zone has its own independent settings: Fill time (1-180 minutes), Soak time (5 minutes to 3 days), Drain time (1-180 minutes), and Cycle interval (6 hours to 31 days). These parameters can be adjusted to match different plant requirements.
+Each pump zone has independent cron-style scheduling and cycle parameters. Set a daily time (like 9:00 AM) and interval (like every 5 days), then configure the cycle phases: Fill time (1-60 minutes), Soak time (1-120 minutes), and Drain time (1-60 minutes). The system automatically calculates when each zone's next watering is due and displays human-readable countdowns like "4d 21h 15m".
 
 Example schedules:
 
-| Plant Type | Fill | Soak | Drain | Wait |
-|------------|------|------|-------|------|
-| Orchids* | 15 min | 2 hours | 10 min | 5 days |
-| Seedlings | 5 min | 30 min | 5 min | 2 days |
-| Large plants | 30 min | 6 hours | 20 min | 7 days |
-| Arid succulents | 10 min | 45 min | 8 min | 14 days |
+| Plant Type | Schedule | Interval | Fill | Soak | Drain |
+|------------|----------|----------|------|------|-------|
+| Orchids* | 9:00 AM | 5 days | 15 min | 2 hours | 10 min |
+| Seedlings | 10:00 AM | 2 days | 5 min | 30 min | 5 min |
+| Large plants | 11:00 AM | 7 days | 30 min | 6 hours | 20 min |
+| Arid succulents | 12:00 PM | 14 days | 10 min | 45 min | 8 min |
 
 *\* Yes, I know your Cymbidiums need different water than your Promenaea and your Sarcochilus. Just pretend they don't for a minute, and please send me pics of your orchid setups.*
 
@@ -51,10 +51,12 @@ The system consists of several configuration files that work together:
 
 The system shows up in Home Assistant with:
 - Real-time status for each zone (Idle/Filling/Soaking/Draining)
-- Time until next cycle
-- Manual cycle triggers
-- Quick preset adjustments
-- Enable/disable controls per zone
+- Human-readable countdown timers showing exactly when next watering is due ("4d 21h 15m")  
+- Cron-style scheduling controls (set daily time and cycle intervals)
+- Live queue viewer showing which zones are pending and waiting
+- Manual cycle triggers and emergency queue clearing
+- Individual zone enable/disable controls
+- Separate fill and drain pump speed settings per zone
 
 ## Hardware
 
@@ -66,6 +68,6 @@ The system is built around an ESP32 development board that controls 4 peristalti
 - Ultrasonic level sensors to stop filling when trays are full
 - Weather integration to adjust watering based on season or humidity
 - Water quality monitoring (TDS/pH)
-- Automated Fertigation by bin/zone
-- More flexible cron-based scheduling for watering cycles
+- Automated fertigation by bin/zone
+- Advanced queue priority and override systems
 - Proper ESP32 schematics and PCB design to replace the current perf board prototype

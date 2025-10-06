@@ -7,42 +7,54 @@ views:
           - type: heading
             heading: Orchid Shelf Flood Irrigation System
           - type: entities
-            title: System Status
+            title: System Status & Queue
             entities:
+              - entity: sensor.floodshelf_queue_status
+                name: Current Queue
+                icon: mdi:playlist-play
+              - entity: sensor.floodshelf_pending_queue_count
+                name: Pending Cycles
+                icon: mdi:format-list-numbered
               - entity: sensor.floodshelf_bin_1_status
                 name: Zone 1 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_1_next_cycle_countdown
+              - entity: sensor.floodshelf_bin_1_next_cycle_countdown_text
                 name: Zone 1 Next Watering Time
                 icon: mdi:timer-sand
               - entity: sensor.floodshelf_bin_2_status
                 name: Zone 2 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_2_next_cycle_countdown
+              - entity: sensor.floodshelf_bin_2_next_cycle_countdown_text
                 name: Zone 2 Next Watering Time
                 icon: mdi:timer-sand
               - entity: sensor.floodshelf_bin_3_status
                 name: Zone 3 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_3_next_cycle_countdown
+              - entity: sensor.floodshelf_bin_3_next_cycle_countdown_text
                 name: Zone 3 Next Watering Time
                 icon: mdi:timer-sand
               - entity: sensor.floodshelf_bin_4_status
                 name: Zone 4 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_4_next_cycle_countdown
+              - entity: sensor.floodshelf_bin_4_next_cycle_countdown_text
                 name: Zone 4 Next Watering Time
                 icon: mdi:timer-sand
             state_color: true
           - type: entities
-            title: Master Controls
+            title: Queue & Master Controls
             entities:
+              - entity: sensor.floodshelf_queue_status
+                name: Current Queue
+                icon: mdi:playlist-play
+              - entity: sensor.floodshelf_pending_queue_count
+                name: Pending Cycles Count
+                icon: mdi:format-list-numbered
               - entity: switch.floodshelf_531e4c_all_pumps_on_off
                 name: All Pumps Master Switch
                 icon: mdi:water-pump
-              - entity: number.floodshelf_daily_watering_hour_24h_format
-                name: Daily Watering Hour (24h)
-                icon: mdi:clock-time-eight
+              - entity: button.floodshelf_clear_all_pending_cycles
+                name: Clear All Pending Cycles
+                icon: mdi:playlist-remove
             state_color: true
           - type: entities
             title: Zone Enable/Auto Schedule Controls
@@ -90,7 +102,7 @@ views:
               - entity: sensor.floodshelf_bin_1_status
                 name: Current Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_1_next_cycle_countdown
+              - entity: sensor.floodshelf_bin_1_next_cycle_countdown_text
                 name: Next Watering Time In
                 icon: mdi:timer-sand
               - entity: switch.floodshelf_peristaltic_pump_1
@@ -122,14 +134,17 @@ views:
               - entity: number.floodshelf_bin_1_drain_duration_minutes
                 name: Drain Duration (minutes)
                 icon: mdi:water-minus
+          - type: entities
+            title: Zone 1 Schedule & Enable
+            entities:
+              - entity: text.floodshelf_bin_1_cron_schedule
+                name: Cron Schedule (e.g., "0 0 9 * * *" for 9 AM daily)
+                icon: mdi:clock-time-eight
               - entity: number.floodshelf_bin_1_cycle_interval_days
                 name: Cycle Interval (days)
                 icon: mdi:timer-sand
-          - type: entities
-            title: Zone 1 Enable & Auto Schedule
-            entities:
               - entity: switch.floodshelf_bin_1_enable
-                name: Zone Enable & Auto Schedule
+                name: Zone Enable
                 icon: mdi:timer-check-outline
             state_color: true
           - type: entities
@@ -185,14 +200,17 @@ views:
               - entity: number.floodshelf_bin_2_drain_duration_minutes
                 name: Drain Duration (minutes)
                 icon: mdi:water-minus
+          - type: entities
+            title: Zone 2 Schedule & Enable
+            entities:
+              - entity: text.floodshelf_bin_2_cron_schedule
+                name: Cron Schedule (e.g., "0 0 10 * * *" for 10 AM daily)
+                icon: mdi:clock-time-eight
               - entity: number.floodshelf_bin_2_cycle_interval_days
                 name: Cycle Interval (days)
                 icon: mdi:timer-sand
-          - type: entities
-            title: Zone 2 Enable & Auto Schedule
-            entities:
               - entity: switch.floodshelf_bin_2_enable
-                name: Zone Enable & Auto Schedule
+                name: Zone Enable
                 icon: mdi:timer-check-outline
             state_color: true
           - type: entities
@@ -248,14 +266,17 @@ views:
               - entity: number.floodshelf_bin_3_drain_duration_minutes
                 name: Drain Duration (minutes)
                 icon: mdi:water-minus
+          - type: entities
+            title: Zone 3 Schedule & Enable
+            entities:
+              - entity: text.floodshelf_bin_3_cron_schedule
+                name: Cron Schedule (e.g., "0 0 11 * * *" for 11 AM daily)
+                icon: mdi:clock-time-eight
               - entity: number.floodshelf_bin_3_cycle_interval_days
                 name: Cycle Interval (days)
                 icon: mdi:timer-sand
-          - type: entities
-            title: Zone 3 Enable & Auto Schedule
-            entities:
               - entity: switch.floodshelf_bin_3_enable
-                name: Zone Enable & Auto Schedule
+                name: Zone Enable
                 icon: mdi:timer-check-outline
             state_color: true
           - type: entities
@@ -311,14 +332,17 @@ views:
               - entity: number.floodshelf_bin_4_drain_duration_minutes
                 name: Drain Duration (minutes)
                 icon: mdi:water-minus
+          - type: entities
+            title: Zone 4 Schedule & Enable
+            entities:
+              - entity: text.floodshelf_bin_4_cron_schedule
+                name: Cron Schedule (e.g., "0 0 12 * * *" for 12 PM daily)
+                icon: mdi:clock-time-eight
               - entity: number.floodshelf_bin_4_cycle_interval_days
                 name: Cycle Interval (days)
                 icon: mdi:timer-sand
-          - type: entities
-            title: Zone 4 Enable & Auto Schedule
-            entities:
               - entity: switch.floodshelf_bin_4_enable
-                name: Zone Enable & Auto Schedule
+                name: Zone Enable
                 icon: mdi:timer-check-outline
             state_color: true
           - type: entities
@@ -339,8 +363,14 @@ views:
               Complete System Control (Separate Fill/Drain Speeds & Auto
               Schedule)
           - type: entities
-            title: All Zone Status
+            title: All Zone Status & Queue
             entities:
+              - entity: sensor.floodshelf_queue_status
+                name: Current Queue
+                icon: mdi:playlist-play
+              - entity: sensor.floodshelf_pending_queue_count
+                name: Pending Cycles
+                icon: mdi:format-list-numbered
               - entity: sensor.floodshelf_bin_1_status
                 name: Zone 1 Status
                 icon: mdi:state-machine
@@ -415,23 +445,35 @@ views:
                 icon: mdi:play-circle
             state_color: true
           - type: entities
-            title: Zone Enable & Auto Schedule Controls
+            title: Zone Enable & Cron Schedule Controls
             entities:
               - entity: switch.floodshelf_bin_1_enable
-                name: Zone 1 Enable & Auto Schedule
+                name: Zone 1 Enable
                 icon: mdi:timer-check-outline
-              - entity: switch.floodshelf_bin_2_enable
-                name: Zone 2 Enable & Auto Schedule
-                icon: mdi:timer-check-outline
-              - entity: switch.floodshelf_bin_3_enable
-                name: Zone 3 Enable & Auto Schedule
-                icon: mdi:timer-check-outline
-              - entity: switch.floodshelf_bin_4_enable
-                name: Zone 4 Enable & Auto Schedule
-                icon: mdi:timer-check-outline
-              - entity: number.floodshelf_daily_watering_hour_24h_format
-                name: Daily Watering Hour (24h)
+              - entity: text.floodshelf_bin_1_cron_schedule
+                name: Zone 1 Cron Schedule
                 icon: mdi:clock-time-eight
+              - entity: switch.floodshelf_bin_2_enable
+                name: Zone 2 Enable
+                icon: mdi:timer-check-outline
+              - entity: text.floodshelf_bin_2_cron_schedule
+                name: Zone 2 Cron Schedule
+                icon: mdi:clock-time-eight
+              - entity: switch.floodshelf_bin_3_enable
+                name: Zone 3 Enable
+                icon: mdi:timer-check-outline
+              - entity: text.floodshelf_bin_3_cron_schedule
+                name: Zone 3 Cron Schedule
+                icon: mdi:clock-time-eight
+              - entity: switch.floodshelf_bin_4_enable
+                name: Zone 4 Enable
+                icon: mdi:timer-check-outline
+              - entity: text.floodshelf_bin_4_cron_schedule
+                name: Zone 4 Cron Schedule
+                icon: mdi:clock-time-eight
+              - entity: button.floodshelf_clear_all_pending_cycles
+                name: Clear All Pending Cycles
+                icon: mdi:playlist-remove
             state_color: true
           - type: entities
             title: Fill Speed Controls

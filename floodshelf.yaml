@@ -53,6 +53,34 @@ globals:
   - id: current_pump_sequence
     type: int
     initial_value: '1'  # Start with pump 1
+  - id: queue_bin_1
+    type: int
+    initial_value: '1'  # Position in queue (1-4, 0 = not in queue)
+  - id: queue_bin_2
+    type: int
+    initial_value: '2'
+  - id: queue_bin_3
+    type: int
+    initial_value: '3'
+  - id: queue_bin_4
+    type: int
+    initial_value: '4'
+  - id: next_bin_to_run
+    type: int
+    initial_value: '1'  # Tracks which bin is next in the queue
+  # Queue system for pending cycles
+  - id: queue_pending_1
+    type: bool
+    initial_value: 'false'
+  - id: queue_pending_2
+    type: bool
+    initial_value: 'false'
+  - id: queue_pending_3
+    type: bool
+    initial_value: 'false'
+  - id: queue_pending_4
+    type: bool
+    initial_value: 'false'
 
 # Define outputs for both HW-095 boards
 output:
@@ -539,86 +567,117 @@ select:
     icon: mdi:gauge
 
 
-# Time component for automation
+# Time component with individual cron schedules and queue processing
 time:
   - platform: homeassistant
     id: homeassistant_time
-
-# Interval-based scheduling for automatic cycles - sequential operation at configurable hour
+    # Note: Individual bin cron schedules can't be dynamically configured in ESPHome
+    # Using interval-based checking as a workaround for configurable schedules
+    
+# Queue processing and cron checking via interval
 interval:
-  - interval: 60s
+  - interval: 60s  # Check every minute for cron matches and process queue
     then:
       - lambda: |-
-          // Sequential pump scheduling - only one pump runs at a time, only at configured hour
+          // Check if any bin's cron schedule matches current time and add to queue
           auto now = id(homeassistant_time).now();
           auto current_time = now.timestamp;
           
-          // Only check for cycles at configured hour (Home Assistant should handle timezone)
-          if (now.hour != (int)id(watering_hour).state) {
-            return;
+          // Simple cron parsing for "0 0 HH * * *" format (daily at specific hour)
+          // For Bin 1
+          if (id(bin_1_enable).state) {
+            std::string cron1 = id(bin_1_cron).state;
+            if (cron1.length() >= 7) {
+              int target_hour = std::stoi(cron1.substr(4, 2));
+              if (now.hour == target_hour && now.minute == 0 && 
+                  current_time - id(pump_1_last_cycle) >= (int)(id(pump_1_cycle_interval).state * 86400)) {
+                id(queue_pending_1) = true;
+              }
+            }
           }
           
-          // Check if all pumps are idle before starting next cycle
+          // For Bin 2
+          if (id(bin_2_enable).state) {
+            std::string cron2 = id(bin_2_cron).state;
+            if (cron2.length() >= 7) {
+              int target_hour = std::stoi(cron2.substr(4, 2));
+              if (now.hour == target_hour && now.minute == 0 && 
+                  current_time - id(pump_2_last_cycle) >= (int)(id(pump_2_cycle_interval).state * 86400)) {
+                id(queue_pending_2) = true;
+              }
+            }
+          }
+          
+          // For Bin 3
+          if (id(bin_3_enable).state) {
+            std::string cron3 = id(bin_3_cron).state;
+            if (cron3.length() >= 7) {
+              int target_hour = std::stoi(cron3.substr(4, 2));
+              if (now.hour == target_hour && now.minute == 0 && 
+                  current_time - id(pump_3_last_cycle) >= (int)(id(pump_3_cycle_interval).state * 86400)) {
+                id(queue_pending_3) = true;
+              }
+            }
+          }
+          
+          // For Bin 4
+          if (id(bin_4_enable).state) {
+            std::string cron4 = id(bin_4_cron).state;
+            if (cron4.length() >= 7) {
+              int target_hour = std::stoi(cron4.substr(4, 2));
+              if (now.hour == target_hour && now.minute == 0 && 
+                  current_time - id(pump_4_last_cycle) >= (int)(id(pump_4_cycle_interval).state * 86400)) {
+                id(queue_pending_4) = true;
+              }
+            }
+          }
+          
+          // Process queue - only if all pumps are idle
           bool all_pumps_idle = (id(pump_1_state) == "Idle" && 
                                 id(pump_2_state) == "Idle" && 
                                 id(pump_3_state) == "Idle" && 
                                 id(pump_4_state) == "Idle");
           
-          // Only proceed if all pumps are idle
-          if (!all_pumps_idle) {
-            return;
-          }
-          
-          // Check pumps in sequence starting from current_pump_sequence
-          int attempts = 0;
-          while (attempts < 4) {  // Prevent infinite loop
-            int current_pump = id(current_pump_sequence);
-            bool pump_started = false;
-            
-            // Check the current pump in sequence (bin enable and auto schedule are now linked)
-            if (current_pump == 1 && 
-                id(bin_1_enable).state &&
-                current_time - id(pump_1_last_cycle) >= (int)(id(pump_1_cycle_interval).state * 86400)) {
-              id(pump_1_flood_cycle).execute();
+          if (all_pumps_idle) {
+            // Check queue in order and run next pending cycle
+            if (id(queue_pending_1)) {
+              id(queue_pending_1) = false;
               id(pump_1_last_cycle) = current_time;
-              pump_started = true;
+              id(pump_1_flood_cycle).execute();
             }
-            else if (current_pump == 2 && 
-                     id(bin_2_enable).state &&
-                     current_time - id(pump_2_last_cycle) >= (int)(id(pump_2_cycle_interval).state * 86400)) {
-              id(pump_2_flood_cycle).execute();
+            else if (id(queue_pending_2)) {
+              id(queue_pending_2) = false;
               id(pump_2_last_cycle) = current_time;
-              pump_started = true;
+              id(pump_2_flood_cycle).execute();
             }
-            else if (current_pump == 3 && 
-                     id(bin_3_enable).state &&
-                     current_time - id(pump_3_last_cycle) >= (int)(id(pump_3_cycle_interval).state * 86400)) {
-              id(pump_3_flood_cycle).execute();
+            else if (id(queue_pending_3)) {
+              id(queue_pending_3) = false;
               id(pump_3_last_cycle) = current_time;
-              pump_started = true;
+              id(pump_3_flood_cycle).execute();
             }
-            else if (current_pump == 4 && 
-                     id(bin_4_enable).state &&
-                     current_time - id(pump_4_last_cycle) >= (int)(id(pump_4_cycle_interval).state * 86400)) {
-              id(pump_4_flood_cycle).execute();
+            else if (id(queue_pending_4)) {
+              id(queue_pending_4) = false;
               id(pump_4_last_cycle) = current_time;
-              pump_started = true;
+              id(pump_4_flood_cycle).execute();
             }
-            
-            // Move to next pump in sequence
-            id(current_pump_sequence) = (current_pump >= 4) ? 1 : current_pump + 1;
-            
-            // If we started a pump, we're done
-            if (pump_started) {
-              break;
-            }
-            
-            attempts++;
           }
 
 
 # Sensors for countdown and status
 sensor:
+  # Queue count sensor  
+  - platform: template
+    name: "Pending Queue Count"
+    id: pending_count_sensor
+    icon: mdi:format-list-numbered
+    lambda: |-
+      int count = 0;
+      if (id(queue_pending_1)) count++;
+      if (id(queue_pending_2)) count++;
+      if (id(queue_pending_3)) count++;
+      if (id(queue_pending_4)) count++;
+      return count;
+    unit_of_measurement: "cycles"
   - platform: template
     name: "Bin 1 Next Cycle Countdown"
     id: pump_1_countdown
@@ -631,26 +690,44 @@ sensor:
       
       auto now = id(homeassistant_time).now();
       auto current_time = now.timestamp;
-      auto configured_hour = (int)id(watering_hour).state;
+      std::string cron1 = id(bin_1_cron).state;
       
-      // Calculate time until next watering hour
-      auto current_tm = *localtime(&current_time);
-      time_t target_time;
-      
-      if (current_tm.tm_hour < configured_hour) {
-        // Next watering is today at configured hour
-        current_tm.tm_hour = configured_hour;
-        current_tm.tm_min = 0;
-        current_tm.tm_sec = 0;
-        target_time = mktime(&current_tm);
-      } else {
-        // Next watering is tomorrow at configured hour
-        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      if (cron1.length() >= 7) {
+        int target_hour = std::stoi(cron1.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_1_cycle_interval).state * 86400); // Convert days to seconds
+        
+        // Calculate next watering time based on last cycle + interval
+        time_t next_cycle_time;
+        
+        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
+        if (id(pump_1_last_cycle) == 0) {
+          // Calculate next watering as interval from now, at the cron hour
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          // Calculate based on actual last cycle + interval
+          next_cycle_time = id(pump_1_last_cycle) + cycle_interval_seconds;
+          // Adjust next cycle time to match the cron hour
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        // If the calculated time is in the past, skip to next interval
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400; // Add one day
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        return time_diff / 3600.0; // Convert to hours
       }
-      
-      // Return hours until next watering time
-      auto time_diff = target_time - current_time;
-      return time_diff / 3600.0; // Convert to hours
+      return NAN;
     unit_of_measurement: "hours"
 
   - platform: template
@@ -665,26 +742,44 @@ sensor:
       
       auto now = id(homeassistant_time).now();
       auto current_time = now.timestamp;
-      auto configured_hour = (int)id(watering_hour).state;
+      std::string cron2 = id(bin_2_cron).state;
       
-      // Calculate time until next watering hour
-      auto current_tm = *localtime(&current_time);
-      time_t target_time;
-      
-      if (current_tm.tm_hour < configured_hour) {
-        // Next watering is today at configured hour
-        current_tm.tm_hour = configured_hour;
-        current_tm.tm_min = 0;
-        current_tm.tm_sec = 0;
-        target_time = mktime(&current_tm);
-      } else {
-        // Next watering is tomorrow at configured hour
-        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      if (cron2.length() >= 7) {
+        int target_hour = std::stoi(cron2.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_2_cycle_interval).state * 86400); // Convert days to seconds
+        
+        // Calculate next watering time based on last cycle + interval
+        time_t next_cycle_time;
+        
+        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
+        if (id(pump_2_last_cycle) == 0) {
+          // Calculate next watering as interval from now, at the cron hour
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          // Calculate based on actual last cycle + interval
+          next_cycle_time = id(pump_2_last_cycle) + cycle_interval_seconds;
+          // Adjust next cycle time to match the cron hour
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        // If the calculated time is in the past, skip to next interval
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400; // Add one day
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        return time_diff / 3600.0;
       }
-      
-      // Return hours until next watering time
-      auto time_diff = target_time - current_time;
-      return time_diff / 3600.0; // Convert to hours
+      return NAN;
     unit_of_measurement: "hours"
 
   - platform: template
@@ -699,26 +794,44 @@ sensor:
       
       auto now = id(homeassistant_time).now();
       auto current_time = now.timestamp;
-      auto configured_hour = (int)id(watering_hour).state;
+      std::string cron3 = id(bin_3_cron).state;
       
-      // Calculate time until next watering hour
-      auto current_tm = *localtime(&current_time);
-      time_t target_time;
-      
-      if (current_tm.tm_hour < configured_hour) {
-        // Next watering is today at configured hour
-        current_tm.tm_hour = configured_hour;
-        current_tm.tm_min = 0;
-        current_tm.tm_sec = 0;
-        target_time = mktime(&current_tm);
-      } else {
-        // Next watering is tomorrow at configured hour
-        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      if (cron3.length() >= 7) {
+        int target_hour = std::stoi(cron3.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_3_cycle_interval).state * 86400); // Convert days to seconds
+        
+        // Calculate next watering time based on last cycle + interval
+        time_t next_cycle_time;
+        
+        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
+        if (id(pump_3_last_cycle) == 0) {
+          // Calculate next watering as interval from now, at the cron hour
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          // Calculate based on actual last cycle + interval
+          next_cycle_time = id(pump_3_last_cycle) + cycle_interval_seconds;
+          // Adjust next cycle time to match the cron hour
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        // If the calculated time is in the past, skip to next interval
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400; // Add one day
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        return time_diff / 3600.0;
       }
-      
-      // Return hours until next watering time
-      auto time_diff = target_time - current_time;
-      return time_diff / 3600.0; // Convert to hours
+      return NAN;
     unit_of_measurement: "hours"
 
   - platform: template
@@ -733,36 +846,131 @@ sensor:
       
       auto now = id(homeassistant_time).now();
       auto current_time = now.timestamp;
-      auto configured_hour = (int)id(watering_hour).state;
+      std::string cron4 = id(bin_4_cron).state;
       
-      // Calculate time until next watering hour
-      auto current_tm = *localtime(&current_time);
-      time_t target_time;
-      
-      if (current_tm.tm_hour < configured_hour) {
-        // Next watering is today at configured hour
-        current_tm.tm_hour = configured_hour;
-        current_tm.tm_min = 0;
-        current_tm.tm_sec = 0;
-        target_time = mktime(&current_tm);
-      } else {
-        // Next watering is tomorrow at configured hour
-        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      if (cron4.length() >= 7) {
+        int target_hour = std::stoi(cron4.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_4_cycle_interval).state * 86400); // Convert days to seconds
+        
+        // Calculate next watering time based on last cycle + interval
+        time_t next_cycle_time;
+        
+        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
+        if (id(pump_4_last_cycle) == 0) {
+          // Calculate next watering as interval from now, at the cron hour
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          // Calculate based on actual last cycle + interval
+          next_cycle_time = id(pump_4_last_cycle) + cycle_interval_seconds;
+          // Adjust next cycle time to match the cron hour
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        // If the calculated time is in the past, skip to next interval
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400; // Add one day
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        return time_diff / 3600.0;
       }
-      
-      // Return hours until next watering time
-      auto time_diff = target_time - current_time;
-      return time_diff / 3600.0; // Convert to hours
+      return NAN;
     unit_of_measurement: "hours"
 
-# Text sensors for bin status
+# Text sensors for bin status and cron schedules
 text_sensor:
+  # Queue status sensor (string values)
+  - platform: template
+    name: "Queue Status"
+    id: queue_status_sensor
+    icon: mdi:playlist-play
+    lambda: |-
+      std::string status = "";
+      int count = 0;
+      if (id(queue_pending_1)) { status += "Bin 1, "; count++; }
+      if (id(queue_pending_2)) { status += "Bin 2, "; count++; }
+      if (id(queue_pending_3)) { status += "Bin 3, "; count++; }
+      if (id(queue_pending_4)) { status += "Bin 4, "; count++; }
+      
+      if (count == 0) return {"Empty"};
+      if (status.length() > 2) status = status.substr(0, status.length() - 2);
+      return {status};
+    update_interval: 10s
+
   - platform: template
     name: "Bin 1 Status"
     id: pump_1_status
     lambda: |-
       return id(pump_1_state);
     update_interval: 1s
+
+  # Human-readable countdown sensors
+  - platform: template
+    name: "Bin 1 Next Cycle Countdown Text"
+    id: pump_1_countdown_text
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_1_enable).state) {
+        return {"Disabled"};
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      std::string cron1 = id(bin_1_cron).state;
+      
+      if (cron1.length() >= 7) {
+        int target_hour = std::stoi(cron1.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_1_cycle_interval).state * 86400);
+        
+        time_t next_cycle_time;
+        
+        if (id(pump_1_last_cycle) == 0) {
+          // Calculate next watering as interval from now, at the cron hour
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          // Calculate based on actual last cycle + interval
+          next_cycle_time = id(pump_1_last_cycle) + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        // If the calculated time is in the past, skip to next interval
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400;
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        int days = time_diff / 86400;
+        int hours = (time_diff % 86400) / 3600;
+        int minutes = ((time_diff % 86400) % 3600) / 60;
+        
+        if (days > 0) {
+          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else if (hours > 0) {
+          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else {
+          return {std::to_string(minutes) + "m"};
+        }
+      }
+      return {"Unknown"};
 
   - platform: template
     name: "Bin 2 Status"
@@ -772,6 +980,61 @@ text_sensor:
     update_interval: 1s
 
   - platform: template
+    name: "Bin 2 Next Cycle Countdown Text"
+    id: pump_2_countdown_text
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_2_enable).state) {
+        return {"Disabled"};
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      std::string cron2 = id(bin_2_cron).state;
+      
+      if (cron2.length() >= 7) {
+        int target_hour = std::stoi(cron2.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_2_cycle_interval).state * 86400);
+        
+        time_t next_cycle_time;
+        
+        if (id(pump_2_last_cycle) == 0) {
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          next_cycle_time = id(pump_2_last_cycle) + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400;
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        int days = time_diff / 86400;
+        int hours = (time_diff % 86400) / 3600;
+        int minutes = ((time_diff % 86400) % 3600) / 60;
+        
+        if (days > 0) {
+          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else if (hours > 0) {
+          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else {
+          return {std::to_string(minutes) + "m"};
+        }
+      }
+      return {"Unknown"};
+
+  - platform: template
     name: "Bin 3 Status"
     id: pump_3_status
     lambda: |-
@@ -779,11 +1042,151 @@ text_sensor:
     update_interval: 1s
 
   - platform: template
+    name: "Bin 3 Next Cycle Countdown Text"
+    id: pump_3_countdown_text
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_3_enable).state) {
+        return {"Disabled"};
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      std::string cron3 = id(bin_3_cron).state;
+      
+      if (cron3.length() >= 7) {
+        int target_hour = std::stoi(cron3.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_3_cycle_interval).state * 86400);
+        
+        time_t next_cycle_time;
+        
+        if (id(pump_3_last_cycle) == 0) {
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          next_cycle_time = id(pump_3_last_cycle) + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400;
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        int days = time_diff / 86400;
+        int hours = (time_diff % 86400) / 3600;
+        int minutes = ((time_diff % 86400) % 3600) / 60;
+        
+        if (days > 0) {
+          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else if (hours > 0) {
+          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else {
+          return {std::to_string(minutes) + "m"};
+        }
+      }
+      return {"Unknown"};
+
+  - platform: template
     name: "Bin 4 Status"
     id: pump_4_status
     lambda: |-
       return id(pump_4_state);
     update_interval: 1s
+
+  - platform: template
+    name: "Bin 4 Next Cycle Countdown Text"
+    id: pump_4_countdown_text
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_4_enable).state) {
+        return {"Disabled"};
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      std::string cron4 = id(bin_4_cron).state;
+      
+      if (cron4.length() >= 7) {
+        int target_hour = std::stoi(cron4.substr(4, 2));
+        int cycle_interval_seconds = (int)(id(pump_4_cycle_interval).state * 86400);
+        
+        time_t next_cycle_time;
+        
+        if (id(pump_4_last_cycle) == 0) {
+          next_cycle_time = current_time + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        } else {
+          next_cycle_time = id(pump_4_last_cycle) + cycle_interval_seconds;
+          auto next_tm = *localtime(&next_cycle_time);
+          next_tm.tm_hour = target_hour;
+          next_tm.tm_min = 0;
+          next_tm.tm_sec = 0;
+          next_cycle_time = mktime(&next_tm);
+        }
+        
+        while (next_cycle_time <= current_time) {
+          next_cycle_time += 86400;
+        }
+        
+        auto time_diff = next_cycle_time - current_time;
+        int days = time_diff / 86400;
+        int hours = (time_diff % 86400) / 3600;
+        int minutes = ((time_diff % 86400) % 3600) / 60;
+        
+        if (days > 0) {
+          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else if (hours > 0) {
+          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
+        } else {
+          return {std::to_string(minutes) + "m"};
+        }
+      }
+      return {"Unknown"};
+
+# Individual cron schedules for each bin
+text:
+  - platform: template
+    name: "Bin 1 Cron Schedule"
+    id: bin_1_cron
+    optimistic: true
+    initial_value: "0 0 9 * * *"  # Daily at 9 AM
+    mode: text
+
+  - platform: template
+    name: "Bin 2 Cron Schedule"
+    id: bin_2_cron
+    optimistic: true
+    initial_value: "0 0 10 * * *"  # Daily at 10 AM
+    mode: text
+
+  - platform: template
+    name: "Bin 3 Cron Schedule"
+    id: bin_3_cron
+    optimistic: true
+    initial_value: "0 0 11 * * *"  # Daily at 11 AM
+    mode: text
+
+  - platform: template
+    name: "Bin 4 Cron Schedule"
+    id: bin_4_cron
+    optimistic: true
+    initial_value: "0 0 12 * * *"  # Daily at 12 PM
+    mode: text
 
 # Pump timing settings only (speed is fixed at 65%)
 number:
@@ -951,46 +1354,59 @@ number:
     initial_value: 1
     optimistic: true
 
-  # Global watering time setting
-  - platform: template
-    name: "Daily Watering Hour (24h format)"
-    id: watering_hour
-    min_value: 0
-    max_value: 23
-    step: 1
-    mode: box
-    initial_value: 9
-    optimistic: true
-
 # Manual cycle buttons
 button:
   - platform: template
     name: "Start Bin 1 Cycle"
     id: start_pump_1_cycle
     on_press:
-      - lambda: "id(pump_1_last_cycle) = id(homeassistant_time).now().timestamp;"
+      - lambda: |-
+          id(pump_1_last_cycle) = id(homeassistant_time).now().timestamp;
+          // Clear pending queue status for manual start
+          id(queue_pending_1) = false;
       - script.execute: pump_1_flood_cycle
 
   - platform: template
     name: "Start Bin 2 Cycle"
     id: start_pump_2_cycle
     on_press:
-      - lambda: "id(pump_2_last_cycle) = id(homeassistant_time).now().timestamp;"
+      - lambda: |-
+          id(pump_2_last_cycle) = id(homeassistant_time).now().timestamp;
+          // Clear pending queue status for manual start
+          id(queue_pending_2) = false;
       - script.execute: pump_2_flood_cycle
 
   - platform: template
     name: "Start Bin 3 Cycle"
     id: start_pump_3_cycle
     on_press:
-      - lambda: "id(pump_3_last_cycle) = id(homeassistant_time).now().timestamp;"
+      - lambda: |-
+          id(pump_3_last_cycle) = id(homeassistant_time).now().timestamp;
+          // Clear pending queue status for manual start
+          id(queue_pending_3) = false;
       - script.execute: pump_3_flood_cycle
 
   - platform: template
     name: "Start Bin 4 Cycle"
     id: start_pump_4_cycle
     on_press:
-      - lambda: "id(pump_4_last_cycle) = id(homeassistant_time).now().timestamp;"
+      - lambda: |-
+          id(pump_4_last_cycle) = id(homeassistant_time).now().timestamp;
+          // Clear pending queue status for manual start
+          id(queue_pending_4) = false;
       - script.execute: pump_4_flood_cycle
+
+  - platform: template
+    name: "Clear All Pending Cycles"
+    id: clear_queue
+    icon: mdi:playlist-remove
+    on_press:
+      - lambda: |-
+          // Clear all pending cycles from queue
+          id(queue_pending_1) = false;
+          id(queue_pending_2) = false;
+          id(queue_pending_3) = false;
+          id(queue_pending_4) = false;
 
 # Scripts for flood cycles
 script:
