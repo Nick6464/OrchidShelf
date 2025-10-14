@@ -1,6 +1,13 @@
 # Loads default set of integrations. Do not remove.
 default_config:
 
+# Home Assistant configuration
+homeassistant:
+  # Time zone configuration - New Zealand
+  time_zone: Pacific/Auckland
+
+
+
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
@@ -9,11 +16,8 @@ frontend:
 script: !include scripts.yaml  
 scene: !include scenes.yaml
 
-# Scheduler integration for advanced scheduling
-scheduler:
-
 # Input helpers for scheduling controls
-input_boolean: !include input_boolean.yaml
+input_text: !include input_text_daily_times.yaml
 
 # Template sensors for enhanced pump status (optional - ESPHome already provides status)
 template: !include template.yaml

@@ -3,6 +3,8 @@ esphome:
   friendly_name: Flood Irrigation Shelf
   min_version: 2025.8.0
   name_add_mac_suffix: false
+  includes:
+    - flood_helpers.h
 
 esp32:
   board: esp32dev
@@ -81,6 +83,87 @@ globals:
   - id: queue_pending_4
     type: bool
     initial_value: 'false'
+  # Next cycle timestamps for each bin
+  - id: bin_1_next_cycle
+    type: int
+    initial_value: '0'
+  - id: bin_2_next_cycle
+    type: int
+    initial_value: '0'
+  - id: bin_3_next_cycle
+    type: int
+    initial_value: '0'
+  - id: bin_4_next_cycle
+    type: int
+    initial_value: '0'
+  # Schedule tracking variables for each bin
+  - id: bin_1_last_run_day
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: bin_2_last_run_day
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: bin_3_last_run_day
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: bin_4_last_run_day
+    type: int
+    restore_value: true
+    initial_value: '0'
+  # Schedule mode for each bin (0 = interval days, 1 = daily times)
+  - id: bin_1_schedule_mode
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: bin_2_schedule_mode
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: bin_3_schedule_mode
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: bin_4_schedule_mode
+    type: int
+    restore_value: true
+    initial_value: '0'
+  # Daily times for each bin (stored as comma-separated hour values, e.g., "8,14,18" for 8AM, 2PM, 6PM)
+  - id: bin_1_daily_times_var
+    type: std::string
+    restore_value: true
+    initial_value: '"10"'
+  - id: bin_2_daily_times_var
+    type: std::string
+    restore_value: true
+    initial_value: '"10"'
+  - id: bin_3_daily_times_var
+    type: std::string
+    restore_value: true
+    initial_value: '"10"'
+  - id: bin_4_daily_times_var
+    type: std::string
+    restore_value: true
+    initial_value: '"10"'
+  # Interval time for each bin (hour of day for interval-based scheduling)
+  - id: bin_1_interval_time
+    type: int
+    restore_value: true
+    initial_value: '10'
+  - id: bin_2_interval_time
+    type: int
+    restore_value: true
+    initial_value: '10'
+  - id: bin_3_interval_time
+    type: int
+    restore_value: true
+    initial_value: '10'
+  - id: bin_4_interval_time
+    type: int
+    restore_value: true
+    initial_value: '10'
 
 # Define outputs for both HW-095 boards
 output:
@@ -143,12 +226,7 @@ switch:
           id: motor_a_speed
           level: !lambda |-
             std::string speed = id(pump_1_reverse).state ? id(pump_1_drain_speed).state : id(pump_1_fill_speed).state;
-            if (speed == "55%") return 0.55;
-            if (speed == "65%") return 0.65;
-            if (speed == "75%") return 0.75;
-            if (speed == "85%") return 0.85;
-            if (speed == "100%") return 1.0;
-            return 0.65; // default
+            return speed_to_level(speed);
       - if:
           condition:
             switch.is_on: pump_1_reverse
@@ -174,12 +252,7 @@ switch:
           id: motor_b_speed
           level: !lambda |-
             std::string speed = id(pump_2_reverse).state ? id(pump_2_drain_speed).state : id(pump_2_fill_speed).state;
-            if (speed == "55%") return 0.55;
-            if (speed == "65%") return 0.65;
-            if (speed == "75%") return 0.75;
-            if (speed == "85%") return 0.85;
-            if (speed == "100%") return 1.0;
-            return 0.65; // default
+            return speed_to_level(speed);
       - if:
           condition:
             switch.is_on: pump_2_reverse
@@ -205,12 +278,7 @@ switch:
           id: motor_c_speed
           level: !lambda |-
             std::string speed = id(pump_3_reverse).state ? id(pump_3_drain_speed).state : id(pump_3_fill_speed).state;
-            if (speed == "55%") return 0.55;
-            if (speed == "65%") return 0.65;
-            if (speed == "75%") return 0.75;
-            if (speed == "85%") return 0.85;
-            if (speed == "100%") return 1.0;
-            return 0.65; // default
+            return speed_to_level(speed);
       - if:
           condition:
             switch.is_on: pump_3_reverse
@@ -236,12 +304,7 @@ switch:
           id: motor_d_speed
           level: !lambda |-
             std::string speed = id(pump_4_reverse).state ? id(pump_4_drain_speed).state : id(pump_4_fill_speed).state;
-            if (speed == "55%") return 0.55;
-            if (speed == "65%") return 0.65;
-            if (speed == "75%") return 0.75;
-            if (speed == "85%") return 0.85;
-            if (speed == "100%") return 1.0;
-            return 0.65; // default
+            return speed_to_level(speed);
       - if:
           condition:
             switch.is_on: pump_4_reverse
@@ -272,12 +335,7 @@ switch:
                 id: motor_a_speed
                 level: !lambda |-
                   std::string speed = id(pump_1_drain_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.75;
+                  return speed_to_level(speed);
             - output.turn_off: motor_a_in1
             - output.turn_on: motor_a_in2
     turn_off_action:
@@ -289,12 +347,7 @@ switch:
                 id: motor_a_speed
                 level: !lambda |-
                   std::string speed = id(pump_1_fill_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.65;
+                  return speed_to_level(speed);
             - output.turn_on: motor_a_in1
             - output.turn_off: motor_a_in2
 
@@ -311,12 +364,7 @@ switch:
                 id: motor_b_speed
                 level: !lambda |-
                   std::string speed = id(pump_2_drain_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.75;
+                  return speed_to_level(speed);
             - output.turn_off: motor_b_in3
             - output.turn_on: motor_b_in4
     turn_off_action:
@@ -328,12 +376,7 @@ switch:
                 id: motor_b_speed
                 level: !lambda |-
                   std::string speed = id(pump_2_fill_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.65;
+                  return speed_to_level(speed);
             - output.turn_on: motor_b_in3
             - output.turn_off: motor_b_in4
 
@@ -350,12 +393,7 @@ switch:
                 id: motor_c_speed
                 level: !lambda |-
                   std::string speed = id(pump_3_drain_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.75;
+                  return speed_to_level(speed);
             - output.turn_off: motor_c_in1
             - output.turn_on: motor_c_in2
     turn_off_action:
@@ -367,12 +405,7 @@ switch:
                 id: motor_c_speed
                 level: !lambda |-
                   std::string speed = id(pump_3_fill_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.65;
+                  return speed_to_level(speed);
             - output.turn_on: motor_c_in1
             - output.turn_off: motor_c_in2
 
@@ -389,12 +422,7 @@ switch:
                 id: motor_d_speed
                 level: !lambda |-
                   std::string speed = id(pump_4_drain_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.75;
+                  return speed_to_level(speed);
             - output.turn_off: motor_d_in3
             - output.turn_on: motor_d_in4
     turn_off_action:
@@ -406,12 +434,7 @@ switch:
                 id: motor_d_speed
                 level: !lambda |-
                   std::string speed = id(pump_4_fill_speed).state;
-                  if (speed == "55%") return 0.55;
-                  if (speed == "65%") return 0.65;
-                  if (speed == "75%") return 0.75;
-                  if (speed == "85%") return 0.85;
-                  if (speed == "100%") return 1.0;
-                  return 0.65;
+                  return speed_to_level(speed);
             - output.turn_on: motor_d_in3
             - output.turn_off: motor_d_in4
 
@@ -566,105 +589,213 @@ select:
     initial_option: "75%"
     icon: mdi:gauge
 
+  # Schedule mode selectors for each bin
+  - platform: template
+    name: "Bin 1 Schedule Mode"
+    id: bin_1_schedule_mode_select
+    options:
+      - "Interval Days"
+      - "Daily Times"
+    icon: mdi:calendar-clock
+    lambda: |-
+      return id(bin_1_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
+    set_action:
+      then:
+        - lambda: |-
+            std::string mode = x;
+            id(bin_1_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
 
-# Time component with individual cron schedules and queue processing
+  - platform: template
+    name: "Bin 2 Schedule Mode"
+    id: bin_2_schedule_mode_select
+    options:
+      - "Interval Days"
+      - "Daily Times"
+    icon: mdi:calendar-clock
+    lambda: |-
+      return id(bin_2_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
+    set_action:
+      then:
+        - lambda: |-
+            std::string mode = x;
+            id(bin_2_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
+
+  - platform: template
+    name: "Bin 3 Schedule Mode"
+    id: bin_3_schedule_mode_select
+    options:
+      - "Interval Days"
+      - "Daily Times"
+    icon: mdi:calendar-clock
+    lambda: |-
+      return id(bin_3_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
+    set_action:
+      then:
+        - lambda: |-
+            std::string mode = x;
+            id(bin_3_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
+
+  - platform: template
+    name: "Bin 4 Schedule Mode"
+    id: bin_4_schedule_mode_select
+    options:
+      - "Interval Days"
+      - "Daily Times"
+    icon: mdi:calendar-clock
+    lambda: |-
+      return id(bin_4_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
+    set_action:
+      then:
+        - lambda: |-
+            std::string mode = x;
+            id(bin_4_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
+
+
+
+# Time component with on_time scheduling
 time:
   - platform: homeassistant
     id: homeassistant_time
-    # Note: Individual bin cron schedules can't be dynamically configured in ESPHome
-    # Using interval-based checking as a workaround for configurable schedules
+    on_time:
+      - seconds: 0
+        minutes: 0
+        then:
+          - lambda: |-
+              auto now = id(homeassistant_time).now();
+              int current_hour = now.hour;
+              int current_day = now.day_of_year;
+              auto current_time = now.timestamp;
+              
+              // Check each bin individually for schedule matches
+              for (int bin = 1; bin <= 4; bin++) {
+                if (get_bin_enable(bin)) {
+                  bool should_run = false;
+                  
+                  // Get this bin's schedule mode
+                  int schedule_mode = 0;
+                  switch(bin) {
+                    case 1: schedule_mode = id(bin_1_schedule_mode); break;
+                    case 2: schedule_mode = id(bin_2_schedule_mode); break;
+                    case 3: schedule_mode = id(bin_3_schedule_mode); break;
+                    case 4: schedule_mode = id(bin_4_schedule_mode); break;
+                  }
+                  
+                  if (schedule_mode == 0) {
+                    // Interval Days mode
+                    // Get this bin's last run day
+                    int last_run_day = 0;
+                    switch(bin) {
+                      case 1: last_run_day = id(bin_1_last_run_day); break;
+                      case 2: last_run_day = id(bin_2_last_run_day); break;
+                      case 3: last_run_day = id(bin_3_last_run_day); break;
+                      case 4: last_run_day = id(bin_4_last_run_day); break;
+                    }
+                    
+                    // Calculate days since last run
+                    int days_since = 0;
+                    if (last_run_day > 0) {
+                      days_since = (current_day - last_run_day + 365) % 365;
+                    } else {
+                      // If never run before, treat as if it ran 0 days ago
+                      days_since = 0;
+                    }
+                    
+                    // Get this bin's cycle interval
+                    float interval_days = get_cycle_interval(bin);
+                    
+                    // Get this bin's interval time
+                    int interval_time = 10; // default
+                    switch(bin) {
+                      case 1: interval_time = id(bin_1_interval_time); break;
+                      case 2: interval_time = id(bin_2_interval_time); break;
+                      case 3: interval_time = id(bin_3_interval_time); break;
+                      case 4: interval_time = id(bin_4_interval_time); break;
+                    }
+                    
+                    // Check if it's time for this bin to run (every N days at specified time)
+                    if (current_hour == interval_time && days_since >= (int)interval_days) {
+                      should_run = true;
+                    }
+                  } else {
+                    // Daily Times mode
+                    std::string daily_times = "";
+                    switch(bin) {
+                      case 1: daily_times = id(ha_bin_1_daily_times).state; break;
+                      case 2: daily_times = id(ha_bin_2_daily_times).state; break;
+                      case 3: daily_times = id(ha_bin_3_daily_times).state; break;
+                      case 4: daily_times = id(ha_bin_4_daily_times).state; break;
+                    }
+                    
+                    // Parse comma-separated times and check if current hour matches
+                    std::stringstream ss(daily_times);
+                    std::string time_str;
+                    while (std::getline(ss, time_str, ',')) {
+                      // Trim whitespace and skip empty strings
+                      time_str.erase(0, time_str.find_first_not_of(" \t"));
+                      time_str.erase(time_str.find_last_not_of(" \t") + 1);
+                      if (!time_str.empty()) {
+                        int time_hour = std::stoi(time_str);
+                        if (current_hour == time_hour) {
+                          should_run = true;
+                          break;
+                        }
+                      }
+                    }
+                  }
+                  
+                  if (should_run) {
+                    set_queue_pending(bin, true);
+                    set_next_cycle_time(bin, current_time);
+                    
+                    // Update last run day for this bin (only for interval mode)
+                    int schedule_mode = 0;
+                    switch(bin) {
+                      case 1: schedule_mode = id(bin_1_schedule_mode); break;
+                      case 2: schedule_mode = id(bin_2_schedule_mode); break;
+                      case 3: schedule_mode = id(bin_3_schedule_mode); break;
+                      case 4: schedule_mode = id(bin_4_schedule_mode); break;
+                    }
+                    
+                    if (schedule_mode == 0) {
+                      switch(bin) {
+                        case 1: id(bin_1_last_run_day) = current_day; break;
+                        case 2: id(bin_2_last_run_day) = current_day; break;
+                        case 3: id(bin_3_last_run_day) = current_day; break;
+                        case 4: id(bin_4_last_run_day) = current_day; break;
+                      }
+                    }
+                  }
+                }
+              }
+              
+              // Process queue - only if all pumps are idle
+              if (are_all_pumps_idle()) {
+                // Check queue in order and run next pending cycle
+                for (int bin = 1; bin <= 4; bin++) {
+                  if (get_queue_pending(bin)) {
+                    set_queue_pending(bin, false);
+                    set_last_cycle(bin, now.timestamp);
+                    execute_flood_cycle(bin);
+                    break; // Only run one cycle at a time
+                  }
+                }
+              }
     
-# Queue processing and cron checking via interval
-interval:
-  - interval: 60s  # Check every minute for cron matches and process queue
-    then:
-      - lambda: |-
-          // Check if any bin's cron schedule matches current time and add to queue
-          auto now = id(homeassistant_time).now();
-          auto current_time = now.timestamp;
-          
-          // Simple cron parsing for "0 0 HH * * *" format (daily at specific hour)
-          // For Bin 1
-          if (id(bin_1_enable).state) {
-            std::string cron1 = id(bin_1_cron).state;
-            if (cron1.length() >= 7) {
-              int target_hour = std::stoi(cron1.substr(4, 2));
-              if (now.hour == target_hour && now.minute == 0 && 
-                  current_time - id(pump_1_last_cycle) >= (int)(id(pump_1_cycle_interval).state * 86400)) {
-                id(queue_pending_1) = true;
-              }
-            }
-          }
-          
-          // For Bin 2
-          if (id(bin_2_enable).state) {
-            std::string cron2 = id(bin_2_cron).state;
-            if (cron2.length() >= 7) {
-              int target_hour = std::stoi(cron2.substr(4, 2));
-              if (now.hour == target_hour && now.minute == 0 && 
-                  current_time - id(pump_2_last_cycle) >= (int)(id(pump_2_cycle_interval).state * 86400)) {
-                id(queue_pending_2) = true;
-              }
-            }
-          }
-          
-          // For Bin 3
-          if (id(bin_3_enable).state) {
-            std::string cron3 = id(bin_3_cron).state;
-            if (cron3.length() >= 7) {
-              int target_hour = std::stoi(cron3.substr(4, 2));
-              if (now.hour == target_hour && now.minute == 0 && 
-                  current_time - id(pump_3_last_cycle) >= (int)(id(pump_3_cycle_interval).state * 86400)) {
-                id(queue_pending_3) = true;
-              }
-            }
-          }
-          
-          // For Bin 4
-          if (id(bin_4_enable).state) {
-            std::string cron4 = id(bin_4_cron).state;
-            if (cron4.length() >= 7) {
-              int target_hour = std::stoi(cron4.substr(4, 2));
-              if (now.hour == target_hour && now.minute == 0 && 
-                  current_time - id(pump_4_last_cycle) >= (int)(id(pump_4_cycle_interval).state * 86400)) {
-                id(queue_pending_4) = true;
-              }
-            }
-          }
-          
-          // Process queue - only if all pumps are idle
-          bool all_pumps_idle = (id(pump_1_state) == "Idle" && 
-                                id(pump_2_state) == "Idle" && 
-                                id(pump_3_state) == "Idle" && 
-                                id(pump_4_state) == "Idle");
-          
-          if (all_pumps_idle) {
-            // Check queue in order and run next pending cycle
-            if (id(queue_pending_1)) {
-              id(queue_pending_1) = false;
-              id(pump_1_last_cycle) = current_time;
-              id(pump_1_flood_cycle).execute();
-            }
-            else if (id(queue_pending_2)) {
-              id(queue_pending_2) = false;
-              id(pump_2_last_cycle) = current_time;
-              id(pump_2_flood_cycle).execute();
-            }
-            else if (id(queue_pending_3)) {
-              id(queue_pending_3) = false;
-              id(pump_3_last_cycle) = current_time;
-              id(pump_3_flood_cycle).execute();
-            }
-            else if (id(queue_pending_4)) {
-              id(queue_pending_4) = false;
-              id(pump_4_last_cycle) = current_time;
-              id(pump_4_flood_cycle).execute();
-            }
-          }
 
 
 # Sensors for countdown and status
 sensor:
+  # Debug time sensor to check timezone
+  - platform: template
+    name: "Debug Current Time"
+    id: debug_time_sensor
+    icon: mdi:clock
+    update_interval: 30s
+    lambda: |-
+      auto now = id(homeassistant_time).now();
+      return now.timestamp;
+    unit_of_measurement: "timestamp"
+    
   # Queue count sensor  
   - platform: template
     name: "Pending Queue Count"
@@ -672,10 +803,9 @@ sensor:
     icon: mdi:format-list-numbered
     lambda: |-
       int count = 0;
-      if (id(queue_pending_1)) count++;
-      if (id(queue_pending_2)) count++;
-      if (id(queue_pending_3)) count++;
-      if (id(queue_pending_4)) count++;
+      for (int bin = 1; bin <= 4; bin++) {
+        if (get_queue_pending(bin)) count++;
+      }
       return count;
     unit_of_measurement: "cycles"
   - platform: template
@@ -684,50 +814,7 @@ sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_1_enable).state) {
-        return NAN; // Return NAN when disabled
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron1 = id(bin_1_cron).state;
-      
-      if (cron1.length() >= 7) {
-        int target_hour = std::stoi(cron1.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_1_cycle_interval).state * 86400); // Convert days to seconds
-        
-        // Calculate next watering time based on last cycle + interval
-        time_t next_cycle_time;
-        
-        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
-        if (id(pump_1_last_cycle) == 0) {
-          // Calculate next watering as interval from now, at the cron hour
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          // Calculate based on actual last cycle + interval
-          next_cycle_time = id(pump_1_last_cycle) + cycle_interval_seconds;
-          // Adjust next cycle time to match the cron hour
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        // If the calculated time is in the past, skip to next interval
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400; // Add one day
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        return time_diff / 3600.0; // Convert to hours
-      }
-      return NAN;
+      return calculate_countdown_hours(1);
     unit_of_measurement: "hours"
 
   - platform: template
@@ -736,50 +823,7 @@ sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_2_enable).state) {
-        return NAN;
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron2 = id(bin_2_cron).state;
-      
-      if (cron2.length() >= 7) {
-        int target_hour = std::stoi(cron2.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_2_cycle_interval).state * 86400); // Convert days to seconds
-        
-        // Calculate next watering time based on last cycle + interval
-        time_t next_cycle_time;
-        
-        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
-        if (id(pump_2_last_cycle) == 0) {
-          // Calculate next watering as interval from now, at the cron hour
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          // Calculate based on actual last cycle + interval
-          next_cycle_time = id(pump_2_last_cycle) + cycle_interval_seconds;
-          // Adjust next cycle time to match the cron hour
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        // If the calculated time is in the past, skip to next interval
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400; // Add one day
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        return time_diff / 3600.0;
-      }
-      return NAN;
+      return calculate_countdown_hours(2);
     unit_of_measurement: "hours"
 
   - platform: template
@@ -788,50 +832,7 @@ sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_3_enable).state) {
-        return NAN;
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron3 = id(bin_3_cron).state;
-      
-      if (cron3.length() >= 7) {
-        int target_hour = std::stoi(cron3.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_3_cycle_interval).state * 86400); // Convert days to seconds
-        
-        // Calculate next watering time based on last cycle + interval
-        time_t next_cycle_time;
-        
-        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
-        if (id(pump_3_last_cycle) == 0) {
-          // Calculate next watering as interval from now, at the cron hour
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          // Calculate based on actual last cycle + interval
-          next_cycle_time = id(pump_3_last_cycle) + cycle_interval_seconds;
-          // Adjust next cycle time to match the cron hour
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        // If the calculated time is in the past, skip to next interval
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400; // Add one day
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        return time_diff / 3600.0;
-      }
-      return NAN;
+      return calculate_countdown_hours(3);
     unit_of_measurement: "hours"
 
   - platform: template
@@ -840,54 +841,43 @@ sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_4_enable).state) {
-        return NAN;
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron4 = id(bin_4_cron).state;
-      
-      if (cron4.length() >= 7) {
-        int target_hour = std::stoi(cron4.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_4_cycle_interval).state * 86400); // Convert days to seconds
-        
-        // Calculate next watering time based on last cycle + interval
-        time_t next_cycle_time;
-        
-        // If we haven't had a cycle yet (last_cycle = 0), use current time as baseline
-        if (id(pump_4_last_cycle) == 0) {
-          // Calculate next watering as interval from now, at the cron hour
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          // Calculate based on actual last cycle + interval
-          next_cycle_time = id(pump_4_last_cycle) + cycle_interval_seconds;
-          // Adjust next cycle time to match the cron hour
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        // If the calculated time is in the past, skip to next interval
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400; // Add one day
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        return time_diff / 3600.0;
-      }
-      return NAN;
+      return calculate_countdown_hours(4);
     unit_of_measurement: "hours"
 
 # Text sensors for bin status and cron schedules
 text_sensor:
+  # Home Assistant input_text sensors for daily times
+  - platform: homeassistant
+    id: ha_bin_1_daily_times
+    entity_id: input_text.floodshelf_bin_1_daily_times
+    internal: true
+  - platform: homeassistant
+    id: ha_bin_2_daily_times
+    entity_id: input_text.floodshelf_bin_2_daily_times
+    internal: true
+  - platform: homeassistant
+    id: ha_bin_3_daily_times
+    entity_id: input_text.floodshelf_bin_3_daily_times
+    internal: true
+  - platform: homeassistant
+    id: ha_bin_4_daily_times
+    entity_id: input_text.floodshelf_bin_4_daily_times
+    internal: true
+
+  # Debug time sensor to check timezone
+  - platform: template
+    name: "Debug Time Display"
+    id: debug_time_display
+    icon: mdi:clock
+    update_interval: 30s
+    lambda: |-
+      auto now = id(homeassistant_time).now();
+      std::string time_str = std::to_string(now.hour) + ":" + 
+                           (now.minute < 10 ? "0" : "") + std::to_string(now.minute) + ":" +
+                           (now.second < 10 ? "0" : "") + std::to_string(now.second);
+      return {time_str};
+
+      
   # Queue status sensor (string values)
   - platform: template
     name: "Queue Status"
@@ -896,10 +886,12 @@ text_sensor:
     lambda: |-
       std::string status = "";
       int count = 0;
-      if (id(queue_pending_1)) { status += "Bin 1, "; count++; }
-      if (id(queue_pending_2)) { status += "Bin 2, "; count++; }
-      if (id(queue_pending_3)) { status += "Bin 3, "; count++; }
-      if (id(queue_pending_4)) { status += "Bin 4, "; count++; }
+      for (int bin = 1; bin <= 4; bin++) {
+        if (get_queue_pending(bin)) { 
+          status += "Bin " + std::to_string(bin) + ", "; 
+          count++; 
+        }
+      }
       
       if (count == 0) return {"Empty"};
       if (status.length() > 2) status = status.substr(0, status.length() - 2);
@@ -910,7 +902,7 @@ text_sensor:
     name: "Bin 1 Status"
     id: pump_1_status
     lambda: |-
-      return id(pump_1_state);
+      return get_pump_state(1);
     update_interval: 1s
 
   # Human-readable countdown sensors
@@ -920,63 +912,13 @@ text_sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_1_enable).state) {
-        return {"Disabled"};
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron1 = id(bin_1_cron).state;
-      
-      if (cron1.length() >= 7) {
-        int target_hour = std::stoi(cron1.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_1_cycle_interval).state * 86400);
-        
-        time_t next_cycle_time;
-        
-        if (id(pump_1_last_cycle) == 0) {
-          // Calculate next watering as interval from now, at the cron hour
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          // Calculate based on actual last cycle + interval
-          next_cycle_time = id(pump_1_last_cycle) + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        // If the calculated time is in the past, skip to next interval
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400;
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        int days = time_diff / 86400;
-        int hours = (time_diff % 86400) / 3600;
-        int minutes = ((time_diff % 86400) % 3600) / 60;
-        
-        if (days > 0) {
-          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else if (hours > 0) {
-          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else {
-          return {std::to_string(minutes) + "m"};
-        }
-      }
-      return {"Unknown"};
+      return {calculate_countdown_text(1)};
 
   - platform: template
     name: "Bin 2 Status"
     id: pump_2_status
     lambda: |-
-      return id(pump_2_state);
+      return get_pump_state(2);
     update_interval: 1s
 
   - platform: template
@@ -985,60 +927,13 @@ text_sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_2_enable).state) {
-        return {"Disabled"};
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron2 = id(bin_2_cron).state;
-      
-      if (cron2.length() >= 7) {
-        int target_hour = std::stoi(cron2.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_2_cycle_interval).state * 86400);
-        
-        time_t next_cycle_time;
-        
-        if (id(pump_2_last_cycle) == 0) {
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          next_cycle_time = id(pump_2_last_cycle) + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400;
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        int days = time_diff / 86400;
-        int hours = (time_diff % 86400) / 3600;
-        int minutes = ((time_diff % 86400) % 3600) / 60;
-        
-        if (days > 0) {
-          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else if (hours > 0) {
-          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else {
-          return {std::to_string(minutes) + "m"};
-        }
-      }
-      return {"Unknown"};
+      return {calculate_countdown_text(2)};
 
   - platform: template
     name: "Bin 3 Status"
     id: pump_3_status
     lambda: |-
-      return id(pump_3_state);
+      return get_pump_state(3);
     update_interval: 1s
 
   - platform: template
@@ -1047,60 +942,13 @@ text_sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_3_enable).state) {
-        return {"Disabled"};
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron3 = id(bin_3_cron).state;
-      
-      if (cron3.length() >= 7) {
-        int target_hour = std::stoi(cron3.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_3_cycle_interval).state * 86400);
-        
-        time_t next_cycle_time;
-        
-        if (id(pump_3_last_cycle) == 0) {
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          next_cycle_time = id(pump_3_last_cycle) + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400;
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        int days = time_diff / 86400;
-        int hours = (time_diff % 86400) / 3600;
-        int minutes = ((time_diff % 86400) % 3600) / 60;
-        
-        if (days > 0) {
-          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else if (hours > 0) {
-          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else {
-          return {std::to_string(minutes) + "m"};
-        }
-      }
-      return {"Unknown"};
+      return {calculate_countdown_text(3)};
 
   - platform: template
     name: "Bin 4 Status"
     id: pump_4_status
     lambda: |-
-      return id(pump_4_state);
+      return get_pump_state(4);
     update_interval: 1s
 
   - platform: template
@@ -1109,88 +957,40 @@ text_sensor:
     icon: mdi:timer-sand
     update_interval: 60s
     lambda: |-
-      if (!id(bin_4_enable).state) {
-        return {"Disabled"};
-      }
-      
-      auto now = id(homeassistant_time).now();
-      auto current_time = now.timestamp;
-      std::string cron4 = id(bin_4_cron).state;
-      
-      if (cron4.length() >= 7) {
-        int target_hour = std::stoi(cron4.substr(4, 2));
-        int cycle_interval_seconds = (int)(id(pump_4_cycle_interval).state * 86400);
-        
-        time_t next_cycle_time;
-        
-        if (id(pump_4_last_cycle) == 0) {
-          next_cycle_time = current_time + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        } else {
-          next_cycle_time = id(pump_4_last_cycle) + cycle_interval_seconds;
-          auto next_tm = *localtime(&next_cycle_time);
-          next_tm.tm_hour = target_hour;
-          next_tm.tm_min = 0;
-          next_tm.tm_sec = 0;
-          next_cycle_time = mktime(&next_tm);
-        }
-        
-        while (next_cycle_time <= current_time) {
-          next_cycle_time += 86400;
-        }
-        
-        auto time_diff = next_cycle_time - current_time;
-        int days = time_diff / 86400;
-        int hours = (time_diff % 86400) / 3600;
-        int minutes = ((time_diff % 86400) % 3600) / 60;
-        
-        if (days > 0) {
-          return {std::to_string(days) + "d " + std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else if (hours > 0) {
-          return {std::to_string(hours) + "h " + std::to_string(minutes) + "m"};
-        } else {
-          return {std::to_string(minutes) + "m"};
-        }
-      }
-      return {"Unknown"};
+      return {calculate_countdown_text(4)};
 
-# Individual cron schedules for each bin
-text:
+  # Daily times display sensors
   - platform: template
-    name: "Bin 1 Cron Schedule"
-    id: bin_1_cron
-    optimistic: true
-    initial_value: "0 0 9 * * *"  # Daily at 9 AM
-    mode: text
+    name: "Bin 1 Daily Times"
+    id: bin_1_daily_times
+    icon: mdi:clock-outline
+    lambda: |-
+      return id(ha_bin_1_daily_times).state;
 
   - platform: template
-    name: "Bin 2 Cron Schedule"
-    id: bin_2_cron
-    optimistic: true
-    initial_value: "0 0 10 * * *"  # Daily at 10 AM
-    mode: text
+    name: "Bin 2 Daily Times"
+    id: bin_2_daily_times
+    icon: mdi:clock-outline
+    lambda: |-
+      return id(ha_bin_2_daily_times).state;
 
   - platform: template
-    name: "Bin 3 Cron Schedule"
-    id: bin_3_cron
-    optimistic: true
-    initial_value: "0 0 11 * * *"  # Daily at 11 AM
-    mode: text
+    name: "Bin 3 Daily Times"
+    id: bin_3_daily_times
+    icon: mdi:clock-outline
+    lambda: |-
+      return id(ha_bin_3_daily_times).state;
 
   - platform: template
-    name: "Bin 4 Cron Schedule"
-    id: bin_4_cron
-    optimistic: true
-    initial_value: "0 0 12 * * *"  # Daily at 12 PM
-    mode: text
+    name: "Bin 4 Daily Times"
+    id: bin_4_daily_times
+    icon: mdi:clock-outline
+    lambda: |-
+      return id(ha_bin_4_daily_times).state;
 
 # Pump timing settings only (speed is fixed at 65%)
 number:
-  # Pump 1 Timing Settings
+  # Bin 1 Timing Settings
   - platform: template
     name: "Bin 1 Fill Duration Minutes"
     id: pump_1_fill_duration
@@ -1229,6 +1029,16 @@ number:
     step: 1
     mode: box
     initial_value: 1
+    optimistic: true
+
+  - platform: template
+    name: "Bin 1 Interval Time Hour"
+    id: pump_1_interval_time
+    min_value: 0
+    max_value: 23
+    step: 1
+    mode: box
+    initial_value: 10
     optimistic: true
 
   # Bin 2 Timing Settings
@@ -1272,6 +1082,16 @@ number:
     initial_value: 1
     optimistic: true
 
+  - platform: template
+    name: "Bin 2 Interval Time Hour"
+    id: pump_2_interval_time
+    min_value: 0
+    max_value: 23
+    step: 1
+    mode: box
+    initial_value: 10
+    optimistic: true
+
   # Bin 3 Timing Settings
   - platform: template
     name: "Bin 3 Fill Duration Minutes"
@@ -1311,6 +1131,16 @@ number:
     step: 1
     mode: box
     initial_value: 1
+    optimistic: true
+
+  - platform: template
+    name: "Bin 3 Interval Time Hour"
+    id: pump_3_interval_time
+    min_value: 0
+    max_value: 23
+    step: 1
+    mode: box
+    initial_value: 10
     optimistic: true
 
   # Bin 4 Timing Settings
@@ -1354,6 +1184,16 @@ number:
     initial_value: 1
     optimistic: true
 
+  - platform: template
+    name: "Bin 4 Interval Time Hour"
+    id: pump_4_interval_time
+    min_value: 0
+    max_value: 23
+    step: 1
+    mode: box
+    initial_value: 10
+    optimistic: true
+
 # Manual cycle buttons
 button:
   - platform: template
@@ -1361,9 +1201,10 @@ button:
     id: start_pump_1_cycle
     on_press:
       - lambda: |-
-          id(pump_1_last_cycle) = id(homeassistant_time).now().timestamp;
-          // Clear pending queue status for manual start
-          id(queue_pending_1) = false;
+          auto current_time = id(homeassistant_time).now().timestamp;
+          set_last_cycle(1, current_time);
+          set_next_cycle_time(1, current_time);
+          set_queue_pending(1, false);
       - script.execute: pump_1_flood_cycle
 
   - platform: template
@@ -1371,9 +1212,10 @@ button:
     id: start_pump_2_cycle
     on_press:
       - lambda: |-
-          id(pump_2_last_cycle) = id(homeassistant_time).now().timestamp;
-          // Clear pending queue status for manual start
-          id(queue_pending_2) = false;
+          auto current_time = id(homeassistant_time).now().timestamp;
+          set_last_cycle(2, current_time);
+          set_next_cycle_time(2, current_time);
+          set_queue_pending(2, false);
       - script.execute: pump_2_flood_cycle
 
   - platform: template
@@ -1381,9 +1223,10 @@ button:
     id: start_pump_3_cycle
     on_press:
       - lambda: |-
-          id(pump_3_last_cycle) = id(homeassistant_time).now().timestamp;
-          // Clear pending queue status for manual start
-          id(queue_pending_3) = false;
+          auto current_time = id(homeassistant_time).now().timestamp;
+          set_last_cycle(3, current_time);
+          set_next_cycle_time(3, current_time);
+          set_queue_pending(3, false);
       - script.execute: pump_3_flood_cycle
 
   - platform: template
@@ -1391,9 +1234,10 @@ button:
     id: start_pump_4_cycle
     on_press:
       - lambda: |-
-          id(pump_4_last_cycle) = id(homeassistant_time).now().timestamp;
-          // Clear pending queue status for manual start
-          id(queue_pending_4) = false;
+          auto current_time = id(homeassistant_time).now().timestamp;
+          set_last_cycle(4, current_time);
+          set_next_cycle_time(4, current_time);
+          set_queue_pending(4, false);
       - script.execute: pump_4_flood_cycle
 
   - platform: template
@@ -1402,11 +1246,10 @@ button:
     icon: mdi:playlist-remove
     on_press:
       - lambda: |-
-          // Clear all pending cycles from queue
-          id(queue_pending_1) = false;
-          id(queue_pending_2) = false;
-          id(queue_pending_3) = false;
-          id(queue_pending_4) = false;
+          for (int bin = 1; bin <= 4; bin++) {
+            set_queue_pending(bin, false);
+          }
+
 
 # Scripts for flood cycles
 script:
@@ -1509,3 +1352,4 @@ script:
       - globals.set:
           id: pump_4_state
           value: '"Idle"'
+

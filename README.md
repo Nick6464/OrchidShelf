@@ -62,6 +62,33 @@ The system shows up in Home Assistant with:
 
 The system is built around an ESP32 development board that controls 4 peristaltic pumps through L298N breakout driver boards (which enable the critical pump reversal feature). Each zone needs its own flood tray, and everything connects to a central water reservoir with standard tubing and fittings.
 
+### ESP32 Pin Layout
+
+```
+        EN - Not used |            | GPIO23 - Pump 1 Speed
+        VP - Not used |            | GPIO22 - Pump 1 Fill
+        VN - Not used |            | TX0 - Not used
+    GPIO34 - Not used |            | RX0 - Not used
+GPIO32 - Pump 4 Speed |            | GPIO21 - Pump 1 Drain
+ GPIO33 - Pump 4 Fill |            | GPIO19 - Pump 2 Speed
+GPIO25 - Pump 3 Speed |            | GPIO18 - Pump 2 Fill
+ GPIO26 - Pump 3 Fill |            | GPIO5 - Not used
+GPIO27 - Pump 3 Drain |            | TX2 - Not used
+    GPIO14 - Not used |            | RX2 - Not used
+    GPIO12 - Not used |            | GPIO4 - Not used
+    GPIO13 - Not used |            | GPIO2 - Not used
+       GND - Not used |            | GPIO15 - Not used
+          VIN - Power |            | GND - Not used
+```
+
+**Pin Assignment Summary:**
+- **Pump 1 (Motor A)**: Speed=GPIO23, Fill=GPIO22, Drain=GPIO21
+- **Pump 2 (Motor B)**: Speed=GPIO19, Fill=GPIO18, Drain=GPIO17  
+- **Pump 3 (Motor C)**: Speed=GPIO25, Fill=GPIO26, Drain=GPIO27
+- **Pump 4 (Motor D)**: Speed=GPIO32, Fill=GPIO33, Drain=GPIO16
+
+The configuration uses two HW-095 motor driver boards, with each board controlling two pumps (motors A & B on board 1, motors C & D on board 2).
+
 ## Future Plans
 
 - Dual-reservoir system with water refiltering to manage salt concentration as water evaporates
