@@ -7,9 +7,9 @@ views:
           - type: heading
             heading: Time-of-Flight Laser Sensor Test
           - type: gauge
-            entity: sensor.floodshelfheight_tof_laser_distance
+            entity: sensor.floodshelfheight_tof_distance
             name: Distance
-            unit: cm
+            unit: mm
             min: 0
             max: 200
             severity:
@@ -19,20 +19,20 @@ views:
           - type: entities
             title: Sensor Reading
             entities:
-              - entity: sensor.floodshelfheight_tof_laser_distance
+              - entity: sensor.floodshelfheight_tof_distance
                 name: ToF Distance
                 icon: mdi:laser-pointer
             state_color: true
           - type: entities
-            title: Test Controls
+            title: Device Controls
             entities:
-              - entity: button.floodshelfheight_test_tof_reading
-                name: Trigger Manual Reading
-                icon: mdi:laser-pointer
+              - entity: button.floodshelfheight_restart_esp32
+                name: Restart Device
+                icon: mdi:restart
             state_color: true
           - type: history-graph
-            title: Distance History
+            title: Distance History (24h)
             entities:
-              - entity: sensor.floodshelfheight_tof_laser_distance
-            hours_to_show: 1
+              - entity: sensor.floodshelfheight_tof_distance
+            hours_to_show: 24
             refresh_interval: 0

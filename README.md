@@ -10,7 +10,14 @@ This system automatically waters your plants using a flood irrigation method. It
 
 The system consists of 4 independent zones each with its own pump and flood tray, all connected to a central water reservoir. An ESP32 controller running ESPHome manages everything through Home Assistant. The pumps are reversible - they run forward to fill trays and reverse to drain them back to the reservoir.
 
-Each zone cycles through four phases: Fill (pump pushes water to tray), Soak (water sits while plants absorb it), Drain (pump reverses to pull water back), and Wait (dry period until next cycle). A queue system ensures only one zone operates at a time, queuing any conflicting schedules and processing them in order once the active cycle completes.
+The system uses VL6180X Time-of-Flight sensors to measure actual water depth in each tray. The system fills until target depth is reached (e.g., 50mm), regardless of time. This provides:
+
+- **Consistent water levels** - Same depth every cycle regardless of pump variations
+- **Automatic compensation** - Adapts to different reservoir levels and tubing resistance
+- **Safety timeouts** - Maximum fill time prevents overflow if sensor fails
+- **Precise drainage** - Monitors water level to ensure complete drain
+
+Each zone has independent target depths (5-150mm range), making it perfect for different plant types with varying water needs. A queue system ensures only one zone operates at a time, queuing any conflicting schedules and processing them in order once the active cycle completes.
 
 ## Why Use Flood Irrigation?
 
@@ -18,16 +25,24 @@ Flood irrigation mimics the natural wet/dry cycles that orchids and many other p
 
 ## Configuration
 
-Each pump zone has independent cron-style scheduling and cycle parameters. Set a daily time (like 9:00 AM) and interval (like every 5 days), then configure the cycle phases: Fill time (1-60 minutes), Soak time (1-120 minutes), and Drain time (1-60 minutes). The system automatically calculates when each zone's next watering is due and displays human-readable countdowns like "4d 21h 15m".
+Each zone has independent depth targets and timing parameters:
 
-Example schedules:
+- **Target Depth** (5-150mm): Desired water level in tray
+- **Empty Distance** (50-300mm): Distance from sensor to empty tray (calibration)
+- **Max Fill Time** (1-60 min): Safety timeout if target depth not reached
+- **Soak Duration** (1-480 min): Time water sits in tray
+- **Schedule**: Cron-style scheduling with interval days or daily times modes
 
-| Plant Type | Schedule | Interval | Fill | Soak | Drain |
-|------------|----------|----------|------|------|-------|
-| Orchids* | 9:00 AM | 5 days | 15 min | 2 hours | 10 min |
-| Seedlings | 10:00 AM | 2 days | 5 min | 30 min | 5 min |
-| Large plants | 11:00 AM | 7 days | 30 min | 6 hours | 20 min |
-| Arid succulents | 12:00 PM | 14 days | 10 min | 45 min | 8 min |
+The system measures actual water depth using ToF sensors and automatically stops filling when target is reached. See `docs/DEPTH_CONTROL_GUIDE.md` and `docs/QUICKSTART_DEPTH.md` for setup instructions.
+
+### Example Schedules
+
+| Plant Type | Schedule | Interval | Target Depth | Soak |
+|------------|----------|----------|--------------|------|
+| Orchids* | 9:00 AM | 5 days | 50mm | 2 hours |
+| Seedlings | 10:00 AM | 2 days | 30mm | 30 min |
+| Large plants | 11:00 AM | 7 days | 75mm | 6 hours |
+| Arid succulents | 12:00 PM | 14 days | 25mm | 45 min |
 
 *\* Yes, I know your Cymbidiums need different water than your Promenaea and your Sarcochilus. Just pretend they don't for a minute, and please send me pics of your orchid setups.*
 
@@ -35,11 +50,12 @@ Example schedules:
 
 ```
 esphome/              ESPHome firmware configurations
-├── floodshelf.yaml         Main controller (ultrasonic sensors)
-├── floodshelfheight.yaml   ToF laser sensor variant
+├── floodshelf.yaml         Main controller with VL6180X ToF sensors
+├── floodshelfheight.yaml   Legacy ToF testing configuration
 ├── tof_test.yaml           Standalone ToF sensor testing
 ├── secrets.yaml            WiFi credentials
-└── flood_helpers.h         Helper functions
+├── flood_helpers.h         Helper functions for depth control
+└── floodshelf_timebased_backup.yaml  Archived time-based version
 
 home-assistant/       Home Assistant configurations
 ├── configuration.yaml      Main HA config
@@ -51,14 +67,18 @@ hardware/             PCB schematics and design files
 └── [KiCad project files]
 
 docs/                 Additional documentation
-└── TOF_WIRING_GUIDE.md    Time-of-Flight sensor setup
+├── TOF_WIRING_GUIDE.md       Time-of-Flight sensor setup
+├── DEPTH_CONTROL_GUIDE.md    VL6180X setup and configuration
+└── QUICKSTART_DEPTH.md       Quick setup guide
 ```
 
 ### ESPHome Configurations
 
-- **`esphome/floodshelf.yaml`** - Main ESP32 controller with pump logic, timing controls, and ultrasonic sensors. Flash this to your ESP32 device.
+- **`esphome/floodshelf.yaml`** - Main ESP32 controller using VL6180X ToF sensors to measure and control water depth automatically. Pumps stop when target depth is reached.
 
-- **`esphome/floodshelfheight.yaml`** - Alternative configuration using VL6180X ToF laser sensors for more accurate distance measurements.
+- **`esphome/floodshelfheight.yaml`** - Legacy ToF sensor testing configuration.
+
+- **`esphome/floodshelf_timebased_backup.yaml`** - Archived legacy version. Kept for reference only.
 
 - **`esphome/secrets.yaml`** - WiFi credentials for the ESP32. Update with your network details before flashing.
 
@@ -84,6 +104,20 @@ The system shows up in Home Assistant with:
 ## Hardware
 
 The system is built around an ESP32 development board that controls 4 peristaltic pumps through L298N breakout driver boards (which enable the critical pump reversal feature). Each zone needs its own flood tray, and everything connects to a central water reservoir with standard tubing and fittings.
+
+### Required Hardware
+
+- **ESP32 development board**
+- **4x Peristaltic pumps**
+- **2x HW-095 motor driver boards**
+- **4x VL6180X Time-of-Flight sensors** - One per bin for water level monitoring
+- **1x TCA9548A I2C Multiplexer** - Allows multiple sensors on one I2C bus
+- **Mounting hardware** - Brackets to position sensors 150-250mm above trays
+- **Power supply**
+- **Tubing and fittings**
+- **Flood trays and reservoir**
+
+See `docs/DEPTH_CONTROL_GUIDE.md` and `docs/QUICKSTART_DEPTH.md` for complete setup instructions.
 
 ### ESP32 Pin Layout
 
@@ -111,20 +145,19 @@ GPIO13 - Bin 3 Trigger|            | GPIO15 - Bin 4 Trigger
 - **Pump 3 (Motor C)**: Speed=GPIO25, Fill=GPIO26, Drain=GPIO27
 - **Pump 4 (Motor D)**: Speed=GPIO32, Fill=GPIO33, Drain=GPIO16
 
-**Ultrasonic Sensors:**
-- **Bin 1**: Trigger=GPIO2, Echo=GPIO4
-- **Bin 2**: Trigger=GPIO5, Echo=GPIO12
-- **Bin 3**: Trigger=GPIO13, Echo=GPIO14
-- **Bin 4**: Trigger=GPIO15, Echo=GPIO34
+**Available Sensor Pins (for VL6180X ToF sensors in depth-based mode):**
+- **I2C Bus**: SDA=GPIO21, SCL=GPIO22
+- **Alternative I2C**: Can use GPIO pins listed below if needed
+- **Note**: GPIO2, GPIO4, GPIO5, GPIO12-15, GPIO34 are available for other purposes
 
-The configuration uses two HW-095 motor driver boards, with each board controlling two pumps (motors A & B on board 1, motors C & D on board 2). Each bin also has an ultrasonic sensor for water level detection.
+The configuration uses two HW-095 motor driver boards, with each board controlling two pumps (motors A & B on board 1, motors C & D on board 2).
 
 ## Future Plans
 
 - Dual-reservoir system with water refiltering to manage salt concentration as water evaporates
-- Ultrasonic level sensors to stop filling when trays are full
 - Weather integration to adjust watering based on season or humidity
 - Water quality monitoring (TDS/pH)
 - Automated fertigation by bin/zone
 - Advanced queue priority and override systems
 - Proper ESP32 schematics and PCB design to replace the current perf board prototype
+- Reservoir level monitoring (now that depth-based control is implemented)

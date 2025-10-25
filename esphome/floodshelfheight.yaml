@@ -24,6 +24,7 @@ wifi:
 external_components:
   - source: github://Nick6464/vl6180x-esphome
     components: [ vl6180x ]
+    refresh: 0s  # Force refresh from GitHub
 
 i2c:
   sda: GPIO21
@@ -35,7 +36,8 @@ sensor:
   - platform: vl6180x
     name: "ToF Distance"
     id: tof_distance
-    update_interval: 2s
+    update_interval: 0.5s
+    samples: 10  
 
 button:
   - platform: restart
