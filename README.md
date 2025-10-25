@@ -31,21 +31,44 @@ Example schedules:
 
 *\* Yes, I know your Cymbidiums need different water than your Promenaea and your Sarcochilus. Just pretend they don't for a minute, and please send me pics of your orchid setups.*
 
-## Project Files
+## Project Structure
 
-The system consists of several configuration files that work together:
+```
+esphome/              ESPHome firmware configurations
+├── floodshelf.yaml         Main controller (ultrasonic sensors)
+├── floodshelfheight.yaml   ToF laser sensor variant
+├── tof_test.yaml           Standalone ToF sensor testing
+├── secrets.yaml            WiFi credentials
+└── flood_helpers.h         Helper functions
 
-- **`floodshelf.yaml`** - Main ESPHome configuration for the ESP32 controller. Contains all pump logic, timing controls, and sensor definitions. Flash this to your ESP32 device.
+home-assistant/       Home Assistant configurations
+├── configuration.yaml      Main HA config
+├── dashboard.yaml          Main system dashboard
+├── dashboard_height.yaml   ToF sensor variant dashboard
+└── template.yaml           Optional template sensors
 
-- **`configuration.yaml`** - Home Assistant main config that includes all the other components. Add the contents to your existing HA configuration or use as-is for a dedicated setup.
+hardware/             PCB schematics and design files
+└── [KiCad project files]
 
-- **`dashboard.yaml`** - Complete Home Assistant dashboard with controls for all 4 zones, scheduling, and monitoring. Import this as a new dashboard in HA. Note: Entity IDs are sprinkled throughout and will likely need updating to match your actual device names.
+docs/                 Additional documentation
+└── TOF_WIRING_GUIDE.md    Time-of-Flight sensor setup
+```
 
-- **`input_boolean.yaml`** - Scheduler enable/disable switches for each pump zone. Required for the automated scheduling to work.
+### ESPHome Configurations
 
-- **`template.yaml`** - Optional template sensors that provide enhanced system status summaries in the dashboard.
+- **`esphome/floodshelf.yaml`** - Main ESP32 controller with pump logic, timing controls, and ultrasonic sensors. Flash this to your ESP32 device.
 
-- **`secrets.yaml`** - WiFi credentials for the ESP32. Update with your network details before flashing.
+- **`esphome/floodshelfheight.yaml`** - Alternative configuration using VL6180X ToF laser sensors for more accurate distance measurements.
+
+- **`esphome/secrets.yaml`** - WiFi credentials for the ESP32. Update with your network details before flashing.
+
+### Home Assistant Configurations
+
+- **`home-assistant/configuration.yaml`** - Main config that includes all components. Add the contents to your existing HA configuration or use as-is for a dedicated setup.
+
+- **`home-assistant/dashboard.yaml`** - Complete dashboard with controls for all 4 zones, scheduling, and monitoring. Import this as a new dashboard in HA. Note: Entity IDs are sprinkled throughout and will likely need updating to match your actual device names.
+
+- **`home-assistant/template.yaml`** - Optional template sensors that provide enhanced system status summaries in the dashboard.
 
 ## Home Assistant Integration
 
@@ -67,18 +90,19 @@ The system is built around an ESP32 development board that controls 4 peristalti
 ```
         EN - Not used |            | GPIO23 - Pump 1 Speed
         VP - Not used |            | GPIO22 - Pump 1 Fill
-        VN - Not used |            | TX0 - Not used
-    GPIO34 - Not used |            | RX0 - Not used
-GPIO32 - Pump 4 Speed |            | GPIO21 - Pump 1 Drain
- GPIO33 - Pump 4 Fill |            | GPIO19 - Pump 2 Speed
-GPIO25 - Pump 3 Speed |            | GPIO18 - Pump 2 Fill
- GPIO26 - Pump 3 Fill |            | GPIO5 - Not used
-GPIO27 - Pump 3 Drain |            | TX2 - Not used
-    GPIO14 - Not used |            | RX2 - Not used
-    GPIO12 - Not used |            | GPIO4 - Not used
-    GPIO13 - Not used |            | GPIO2 - Not used
-       GND - Not used |            | GPIO15 - Not used
-          VIN - Power |            | GND - Not used
+        VN - Not used |            | GPIO1 - Not used
+GPIO34 - Bin 4 Echo   |            | RX0 - Not used
+    GPIO35 - Not used |            | GPIO21 - Pump 1 Drain
+GPIO32 - Pump 4 Speed |            | GPIO19 - Pump 2 Speed
+ GPIO33 - Pump 4 Fill |            | GPIO18 - Pump 2 Fill
+GPIO25 - Pump 3 Speed |            | GPIO5 - Bin 2 Trigger
+ GPIO26 - Pump 3 Fill |            | GPIO17 - Pump 2 Drain
+GPIO27 - Pump 3 Drain |            | GPIO16 - Pump 4 Drain
+GPIO14 - Bin 3 Echo   |            | GPIO4 - Bin 1 Echo
+   GPIO12 - Bin 2 Echo|            | GPIO2 - Bin 1 Trigger
+GPIO13 - Bin 3 Trigger|            | GPIO15 - Bin 4 Trigger
+       GND - Not used |            | GND - Not used
+          VIN - Power |            | 3v3 - Not used
 ```
 
 **Pin Assignment Summary:**
@@ -87,7 +111,13 @@ GPIO27 - Pump 3 Drain |            | TX2 - Not used
 - **Pump 3 (Motor C)**: Speed=GPIO25, Fill=GPIO26, Drain=GPIO27
 - **Pump 4 (Motor D)**: Speed=GPIO32, Fill=GPIO33, Drain=GPIO16
 
-The configuration uses two HW-095 motor driver boards, with each board controlling two pumps (motors A & B on board 1, motors C & D on board 2).
+**Ultrasonic Sensors:**
+- **Bin 1**: Trigger=GPIO2, Echo=GPIO4
+- **Bin 2**: Trigger=GPIO5, Echo=GPIO12
+- **Bin 3**: Trigger=GPIO13, Echo=GPIO14
+- **Bin 4**: Trigger=GPIO15, Echo=GPIO34
+
+The configuration uses two HW-095 motor driver boards, with each board controlling two pumps (motors A & B on board 1, motors C & D on board 2). Each bin also has an ultrasonic sensor for water level detection.
 
 ## Future Plans
 
