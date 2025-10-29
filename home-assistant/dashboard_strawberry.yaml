@@ -1,0 +1,120 @@
+views:
+  - title: Strawberry System
+    sections:
+      - type: grid
+        columns: 2
+        cards:
+          - type: heading
+            heading: Strawberry Flood Irrigation System
+          - type: entities
+            title: System Control
+            entities:
+              - entity: sensor.esphome_web_456420_bin_status
+                name: Current Status
+                icon: mdi:state-machine
+              - entity: sensor.esphome_web_456420_next_cycle_countdown_text
+                name: Next Watering Time
+                icon: mdi:timer-sand
+              - entity: switch.esphome_web_456420_peristaltic_pump
+                name: Pump On/Off
+                icon: mdi:water-pump
+              - entity: switch.esphome_web_456420_pump_reverse
+                name: Reverse Direction
+                icon: mdi:swap-horizontal
+              - entity: switch.esphome_web_456420_bin_enable
+                name: Zone Enable
+                icon: mdi:timer-check-outline
+              - entity: button.esphome_web_456420_start_cycle
+                name: Start Manual Cycle Now
+                icon: mdi:play-circle
+            state_color: true
+          - type: entities
+            title: Speed Settings
+            entities:
+              - entity: select.esphome_web_456420_pump_fill_speed
+                name: Fill Speed
+                icon: mdi:water-plus
+              - entity: select.esphome_web_456420_pump_drain_speed
+                name: Drain Speed
+                icon: mdi:water-minus
+            state_color: true
+          - type: entities
+            title: Water Level Monitoring
+            entities:
+              - entity: sensor.esphome_web_456420_bin_1_water_distance
+                name: Water Distance (mm)
+                icon: mdi:ruler
+              - entity: sensor.esphome_web_456420_bin_1_calibrated_height
+                name: Calibrated Height (mm)
+                icon: mdi:ruler
+              - entity: sensor.esphome_web_456420_bin_1_water_level
+                name: Water Level
+                icon: mdi:water-percent
+              - entity: sensor.esphome_web_456420_bin_1_water_level_status
+                name: Water Status
+                icon: mdi:water-check
+            state_color: true
+          - type: entities
+            title: Sensor Calibration
+            entities:
+              - entity: sensor.esphome_web_456420_sensor_zero_offset
+                name: Zero Offset (mm)
+                icon: mdi:crosshairs-gps
+              - entity: button.esphome_web_456420_zero_sensor
+                name: Zero Sensor
+                icon: mdi:crosshairs
+            state_color: true
+          - type: entities
+            title: Depth Control Settings
+            entities:
+              - entity: number.esphome_web_456420_target_depth_mm
+                name: Target Depth (mm)
+                icon: mdi:water-plus
+              - entity: number.esphome_web_456420_empty_distance_mm
+                name: Empty Distance (mm)
+                icon: mdi:ruler
+              - entity: number.esphome_web_456420_max_fill_time_minutes
+                name: Max Fill Time (minutes)
+                icon: mdi:timer-outline
+            state_color: true
+          - type: entities
+            title: Cycle Timing Settings
+            entities:
+              - entity: number.esphome_web_456420_soak_duration_minutes
+                name: Soak Duration (minutes)
+                icon: mdi:clock-time-eight
+          - type: entities
+            title: Schedule Mode
+            entities:
+              - entity: select.esphome_web_456420_schedule_mode
+                name: Schedule Mode
+                icon: mdi:calendar-clock
+            state_color: true
+          - type: conditional
+            conditions:
+              - entity: select.esphome_web_456420_schedule_mode
+                state: "Interval Days"
+            card:
+              type: entities
+              title: Interval Schedule Settings
+              entities:
+                - entity: number.esphome_web_456420_cycle_interval_days
+                  name: Cycle Interval (days)
+                  icon: mdi:timer-sand
+                - entity: number.esphome_web_456420_interval_time_hour
+                  name: Run Time (hour of day)
+                  icon: mdi:clock-outline
+              state_color: true
+          - type: conditional
+            conditions:
+              - entity: select.esphome_web_456420_schedule_mode
+                state: "Daily Times"
+            card:
+              type: entities
+              title: Daily Schedule Settings
+              entities:
+                - entity: input_text.esphome_web_456420_bin_1_daily_times
+                  name: Daily Times (comma-separated hours)
+                  icon: mdi:clock-outline
+              state_color: true
+        column_span: 2

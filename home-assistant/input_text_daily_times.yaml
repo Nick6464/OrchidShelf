@@ -1,0 +1,30 @@
+# Input text helpers for floodshelf daily times scheduling
+# These allow comma-separated hour values (e.g., "8,12,18" for 8am, 12pm, 6pm)
+
+# Original Floodshelf System
+floodshelf_bin_1_daily_times:
+  name: "Floodshelf Bin 1 Daily Times"
+  initial: "10"
+  icon: mdi:clock-outline
+
+floodshelf_bin_2_daily_times:
+  name: "Floodshelf Bin 2 Daily Times"
+  initial: "10"
+  icon: mdi:clock-outline
+
+floodshelf_bin_3_daily_times:
+  name: "Floodshelf Bin 3 Daily Times"
+  initial: "10"
+  icon: mdi:clock-outline
+
+floodshelf_bin_4_daily_times:
+  name: "Floodshelf Bin 4 Daily Times"
+  initial: "10"
+  icon: mdi:clock-outline
+
+# Strawberry Floodshelf System (Single Zone)
+floodshelf_strawberry_bin_1_daily_times:
+  name: "Strawberry Daily Times"
+  initial: "10"
+  icon: mdi:clock-outline
+
