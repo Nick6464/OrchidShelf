@@ -1,0 +1,203 @@
+views:
+  - title: Strawberry System
+    type: sections
+    sections:
+      - type: grid
+        columns: 3
+        cards:
+          - type: heading
+            heading: 🍓 Strawberry Flood Irrigation
+            heading_style: title
+            column_span: 3
+          - type: tile
+            entity: sensor.esphome_web_456420_bin_status
+            name: System Status
+            icon: mdi:state-machine
+            vertical: true
+          - type: tile
+            entity: sensor.esphome_web_456420_next_cycle_countdown_text
+            name: Next Watering
+            icon: mdi:timer-sand
+            vertical: true
+          - type: tile
+            entity: switch.esphome_web_456420_bin_enable
+            name: Auto Schedule
+            icon: mdi:timer-check-outline
+            vertical: true
+          - type: gauge
+            entity: sensor.esphome_web_456420_water_depth
+            name: Current Water Depth
+            unit: mm
+            min: 0
+            max: 150
+            needle: true
+            severity:
+              green: 40
+              yellow: 20
+              red: 0
+            segments:
+              - from: 0
+                color: '#db4437'
+              - from: 20
+                color: '#ffa600'
+              - from: 40
+                color: '#43a047'
+          - type: gauge
+            entity: number.esphome_web_456420_target_depth_mm
+            name: Target Depth
+            unit: mm
+            min: 0
+            max: 150
+            needle: false
+          - type: gauge
+            entity: sensor.esphome_web_456420_bin_1_water_distance
+            name: Raw Sensor Reading
+            unit: mm
+            min: 50
+            max: 300
+            needle: true
+          - type: history-graph
+            title: Water Depth Over Time (24h)
+            hours_to_show: 24
+            column_span: 3
+            entities:
+              - entity: sensor.esphome_web_456420_water_depth
+                name: Actual Depth
+              - entity: number.esphome_web_456420_target_depth_mm
+                name: Target Depth
+          - type: entities
+            title: Quick Controls
+            card_mod:
+              style: |
+                ha-card {
+                  border-left: 4px solid var(--primary-color);
+                }
+            entities:
+              - entity: switch.esphome_web_456420_peristaltic_pump
+                name: Pump
+                icon: mdi:water-pump
+              - entity: switch.esphome_web_456420_pump_reverse
+                name: Reverse
+                icon: mdi:swap-horizontal
+              - entity: button.esphome_web_456420_start_cycle
+                name: Start Cycle Now
+                icon: mdi:play-circle
+              - type: divider
+              - entity: select.esphome_web_456420_pump_fill_speed
+                name: Fill Speed
+                icon: mdi:speedometer
+              - entity: select.esphome_web_456420_pump_drain_speed
+                name: Drain Speed
+                icon: mdi:speedometer
+            state_color: true
+          - type: entities
+            title: Sensor Calibration
+            card_mod:
+              style: |
+                ha-card {
+                  border-left: 4px solid var(--warning-color);
+                }
+            entities:
+              - entity: sensor.esphome_web_456420_sensor_zero_offset
+                name: Zero Reference
+                icon: mdi:crosshairs-gps
+              - entity: sensor.esphome_web_456420_bin_1_water_distance
+                name: Current Reading
+                icon: mdi:ruler
+              - type: divider
+              - entity: button.esphome_web_456420_zero_sensor
+                name: Zero Sensor Now
+                icon: mdi:crosshairs
+                tap_action:
+                  action: call-service
+                  service: button.press
+                  service_data:
+                    entity_id: button.esphome_web_456420_zero_sensor
+            state_color: true
+          - type: entities
+            title: Depth & Timing
+            card_mod:
+              style: |
+                ha-card {
+                  border-left: 4px solid var(--info-color);
+                }
+            entities:
+              - entity: number.esphome_web_456420_target_depth_mm
+                name: Target Depth
+                icon: mdi:water-plus
+              - entity: number.esphome_web_456420_max_fill_time_minutes
+                name: Max Fill Time
+                icon: mdi:timer-outline
+              - entity: number.esphome_web_456420_soak_duration_minutes
+                name: Soak Duration
+                icon: mdi:timer-sand
+            state_color: true
+          - type: entities
+            title: Schedule Mode
+            card_mod:
+              style: |
+                ha-card {
+                  border-left: 4px solid var(--success-color);
+                }
+            entities:
+              - entity: select.esphome_web_456420_schedule_mode
+                name: Schedule Type
+                icon: mdi:calendar-clock
+            state_color: true
+          - type: conditional
+            conditions:
+              - entity: select.esphome_web_456420_schedule_mode
+                state: Interval Days
+            card:
+              type: entities
+              title: Interval Schedule
+              card_mod:
+                style: |
+                  ha-card {
+                    border-left: 4px solid var(--success-color);
+                  }
+              entities:
+                - entity: number.esphome_web_456420_cycle_interval_days
+                  name: Every N Days
+                  icon: mdi:calendar-range
+                - entity: number.esphome_web_456420_interval_time_hour
+                  name: At Hour
+                  icon: mdi:clock-outline
+              state_color: true
+          - type: conditional
+            conditions:
+              - entity: select.esphome_web_456420_schedule_mode
+                state: Daily Times
+            card:
+              type: entities
+              title: Daily Schedule
+              card_mod:
+                style: |
+                  ha-card {
+                    border-left: 4px solid var(--success-color);
+                  }
+              entities:
+                - entity: input_text.esphome_web_456420_bin_1_daily_times
+                  name: Times (e.g. 8,12,18)
+                  icon: mdi:clock-multiple-outline
+              state_color: true
+          - type: entities
+            title: Legacy Settings
+            card_mod:
+              style: |
+                ha-card {
+                  border-left: 4px solid var(--disabled-color);
+                }
+            entities:
+              - entity: number.esphome_web_456420_empty_distance_mm
+                name: Empty Distance (old method)
+                icon: mdi:ruler
+            state_color: true
+          - type: history-graph
+            title: Raw Sensor Distance (48h)
+            hours_to_show: 48
+            column_span: 2
+            entities:
+              - entity: sensor.esphome_web_456420_bin_1_water_distance
+                name: Sensor Reading
+        column_span: 2

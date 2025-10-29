@@ -3,17 +3,14 @@ esphome:
   friendly_name: Flood Irrigation Shelf
   min_version: 2025.8.0
   name_add_mac_suffix: false
-  includes:
-    - flood_helpers.h
 
 esp32:
   board: esp32dev
   framework:
-    type: arduino
+    type: esp-idf
 
 # Enable logging
 logger:
-  level: INFO
 
 # Enable Home Assistant API
 api:
@@ -25,37 +22,6 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-
-# Load VL6180X custom component
-external_components:
-  - source: github://Nick6464/vl6180x-esphome
-    components: [ vl6180x ]
-
-# I2C Buses for VL6180X sensors - one bus per sensor
-i2c:
-  - id: bus_bin_1
-    sda: GPIO4
-    scl: GPIO5
-    scan: true
-    frequency: 400kHz
-  
-  - id: bus_bin_2
-    sda: GPIO13
-    scl: GPIO14
-    scan: true
-    frequency: 400kHz
-  
-  - id: bus_bin_3
-    sda: GPIO12
-    scl: GPIO15
-    scan: true
-    frequency: 400kHz
-  
-  - id: bus_bin_4
-    sda: GPIO2
-    scl: GPIO0
-    scan: true
-    frequency: 400kHz
 
 # Global variables for tracking bin states and last cycle times
 globals:
@@ -83,103 +49,10 @@ globals:
   - id: pump_4_last_cycle
     type: int
     initial_value: '0'
-  # Queue management
+  # Sequential pump queue management
   - id: current_pump_sequence
     type: int
-    initial_value: '1'
-  - id: queue_pending_1
-    type: bool
-    initial_value: 'false'
-  - id: queue_pending_2
-    type: bool
-    initial_value: 'false'
-  - id: queue_pending_3
-    type: bool
-    initial_value: 'false'
-  - id: queue_pending_4
-    type: bool
-    initial_value: 'false'
-  # Next cycle timestamps
-  - id: bin_1_next_cycle
-    type: int
-    initial_value: '0'
-  - id: bin_2_next_cycle
-    type: int
-    initial_value: '0'
-  - id: bin_3_next_cycle
-    type: int
-    initial_value: '0'
-  - id: bin_4_next_cycle
-    type: int
-    initial_value: '0'
-  # Schedule tracking
-  - id: bin_1_last_run_day
-    type: int
-    restore_value: true
-    initial_value: '0'
-  - id: bin_2_last_run_day
-    type: int
-    restore_value: true
-    initial_value: '0'
-  - id: bin_3_last_run_day
-    type: int
-    restore_value: true
-    initial_value: '0'
-  - id: bin_4_last_run_day
-    type: int
-    restore_value: true
-    initial_value: '0'
-  # Schedule mode (0 = interval days, 1 = daily times)
-  - id: bin_1_schedule_mode
-    type: int
-    restore_value: true
-    initial_value: '0'
-  - id: bin_2_schedule_mode
-    type: int
-    restore_value: true
-    initial_value: '0'
-  - id: bin_3_schedule_mode
-    type: int
-    restore_value: true
-    initial_value: '0'
-  - id: bin_4_schedule_mode
-    type: int
-    restore_value: true
-    initial_value: '0'
-  # Daily times strings
-  - id: bin_1_daily_times_var
-    type: std::string
-    restore_value: true
-    initial_value: '"10"'
-  - id: bin_2_daily_times_var
-    type: std::string
-    restore_value: true
-    initial_value: '"10"'
-  - id: bin_3_daily_times_var
-    type: std::string
-    restore_value: true
-    initial_value: '"10"'
-  - id: bin_4_daily_times_var
-    type: std::string
-    restore_value: true
-    initial_value: '"10"'
-  # Interval time for each bin
-  - id: bin_1_interval_time
-    type: int
-    restore_value: true
-    initial_value: '10'
-  - id: bin_2_interval_time
-    type: int
-    restore_value: true
-    initial_value: '10'
-  - id: bin_3_interval_time
-    type: int
-    restore_value: true
-    initial_value: '10'
-  - id: bin_4_interval_time
-    type: int
-    restore_value: true
-    initial_value: '10'
+    initial_value: '1'  # Start with pump 1
 
 # Define outputs for both HW-095 boards
 output:
@@ -231,133 +104,131 @@ output:
     pin: GPIO16
     id: motor_d_in4
 
-# VL6180X ToF Sensors for each bin - one per I2C bus
-sensor:
-  # Bin 1 Water Level Sensor
-  - platform: vl6180x
-    name: "Bin 1 Water Distance"
-    id: bin_1_distance
-    update_interval: 0.5s
-    samples: 10
-    address: 0x29
-    i2c_id: bus_bin_1
-    filters:
-      - median:
-          window_size: 5
-          send_every: 1
-
-  # Bin 2 Water Level Sensor
-  - platform: vl6180x
-    name: "Bin 2 Water Distance"
-    id: bin_2_distance
-    update_interval: 0.5s
-    samples: 10
-    address: 0x29
-    i2c_id: bus_bin_2
-    filters:
-      - median:
-          window_size: 5
-          send_every: 1
-
-  # Bin 3 Water Level Sensor
-  - platform: vl6180x
-    name: "Bin 3 Water Distance"
-    id: bin_3_distance
-    update_interval: 0.5s
-    samples: 10
-    address: 0x29
-    i2c_id: bus_bin_3
-    filters:
-      - median:
-          window_size: 5
-          send_every: 1
-
-  # Bin 4 Water Level Sensor
-  - platform: vl6180x
-    name: "Bin 4 Water Distance"
-    id: bin_4_distance
-    update_interval: 0.5s
-    samples: 10
-    address: 0x29
-    i2c_id: bus_bin_4
-    filters:
-      - median:
-          window_size: 5
-          send_every: 1
-
-# Create switch entities for all 4 pumps
+# Create simple switch entities for all 4 pumps (65% fixed speed)
 switch:
   - platform: template
     name: "Peristaltic Pump 1"
     id: pump_1
     optimistic: true
     turn_on_action:
-      - lambda: |-
-          bool reverse = id(pump_1_reverse).state;
-          std::string speed = reverse ? id(pump_1_drain_speed).state : id(pump_1_fill_speed).state;
-          id(motor_a_speed)->set_level(speed_to_level(speed));
-          id(motor_a_in1)->turn_off();
-          id(motor_a_in2)->turn_off();
-          (reverse ? id(motor_a_in2) : id(motor_a_in1))->turn_on();
+      - output.set_level:
+          id: motor_a_speed
+          level: !lambda |-
+            std::string speed = id(pump_1_reverse).state ? id(pump_1_drain_speed).state : id(pump_1_fill_speed).state;
+            if (speed == "55%") return 0.55;
+            if (speed == "65%") return 0.65;
+            if (speed == "75%") return 0.75;
+            if (speed == "85%") return 0.85;
+            if (speed == "100%") return 1.0;
+            return 0.65; // default
+      - if:
+          condition:
+            switch.is_on: pump_1_reverse
+          then:
+            - output.turn_off: motor_a_in1
+            - output.turn_on: motor_a_in2
+          else:
+            - output.turn_on: motor_a_in1
+            - output.turn_off: motor_a_in2
     turn_off_action:
-      - lambda: |-
-          id(motor_a_in1)->turn_off();
-          id(motor_a_in2)->turn_off();
-          id(motor_a_speed)->set_level(0.0);
+      - output.turn_off: motor_a_in1
+      - output.turn_off: motor_a_in2
+      - output.set_level:
+          id: motor_a_speed
+          level: 0.0
 
   - platform: template
     name: "Peristaltic Pump 2"
     id: pump_2
     optimistic: true
     turn_on_action:
-      - lambda: |-
-          bool reverse = id(pump_2_reverse).state;
-          std::string speed = reverse ? id(pump_2_drain_speed).state : id(pump_2_fill_speed).state;
-          id(motor_b_speed)->set_level(speed_to_level(speed));
-          id(motor_b_in3)->turn_off();
-          id(motor_b_in4)->turn_off();
-          (reverse ? id(motor_b_in4) : id(motor_b_in3))->turn_on();
+      - output.set_level:
+          id: motor_b_speed
+          level: !lambda |-
+            std::string speed = id(pump_2_reverse).state ? id(pump_2_drain_speed).state : id(pump_2_fill_speed).state;
+            if (speed == "55%") return 0.55;
+            if (speed == "65%") return 0.65;
+            if (speed == "75%") return 0.75;
+            if (speed == "85%") return 0.85;
+            if (speed == "100%") return 1.0;
+            return 0.65; // default
+      - if:
+          condition:
+            switch.is_on: pump_2_reverse
+          then:
+            - output.turn_off: motor_b_in3
+            - output.turn_on: motor_b_in4
+          else:
+            - output.turn_on: motor_b_in3
+            - output.turn_off: motor_b_in4
     turn_off_action:
-      - lambda: |-
-          id(motor_b_in3)->turn_off();
-          id(motor_b_in4)->turn_off();
-          id(motor_b_speed)->set_level(0.0);
+      - output.turn_off: motor_b_in3
+      - output.turn_off: motor_b_in4
+      - output.set_level:
+          id: motor_b_speed
+          level: 0.0
 
   - platform: template
     name: "Peristaltic Pump 3"
     id: pump_3
     optimistic: true
     turn_on_action:
-      - lambda: |-
-          bool reverse = id(pump_3_reverse).state;
-          std::string speed = reverse ? id(pump_3_drain_speed).state : id(pump_3_fill_speed).state;
-          id(motor_c_speed)->set_level(speed_to_level(speed));
-          id(motor_c_in1)->turn_off();
-          id(motor_c_in2)->turn_off();
-          (reverse ? id(motor_c_in2) : id(motor_c_in1))->turn_on();
+      - output.set_level:
+          id: motor_c_speed
+          level: !lambda |-
+            std::string speed = id(pump_3_reverse).state ? id(pump_3_drain_speed).state : id(pump_3_fill_speed).state;
+            if (speed == "55%") return 0.55;
+            if (speed == "65%") return 0.65;
+            if (speed == "75%") return 0.75;
+            if (speed == "85%") return 0.85;
+            if (speed == "100%") return 1.0;
+            return 0.65; // default
+      - if:
+          condition:
+            switch.is_on: pump_3_reverse
+          then:
+            - output.turn_off: motor_c_in1
+            - output.turn_on: motor_c_in2
+          else:
+            - output.turn_on: motor_c_in1
+            - output.turn_off: motor_c_in2
     turn_off_action:
-      - lambda: |-
-          id(motor_c_in1)->turn_off();
-          id(motor_c_in2)->turn_off();
-          id(motor_c_speed)->set_level(0.0);
+      - output.turn_off: motor_c_in1
+      - output.turn_off: motor_c_in2
+      - output.set_level:
+          id: motor_c_speed
+          level: 0.0
 
   - platform: template
     name: "Peristaltic Pump 4"
     id: pump_4
     optimistic: true
     turn_on_action:
-      - lambda: |-
-          bool reverse = id(pump_4_reverse).state;
-          std::string speed = reverse ? id(pump_4_drain_speed).state : id(pump_4_fill_speed).state;
-          id(motor_d_speed)->set_level(speed_to_level(speed));
-          id(motor_d_in3)->turn_off();
-          id(motor_d_in4)->turn_off();
-          (reverse ? id(motor_d_in4) : id(motor_d_in3))->turn_on();
+      - output.set_level:
+          id: motor_d_speed
+          level: !lambda |-
+            std::string speed = id(pump_4_reverse).state ? id(pump_4_drain_speed).state : id(pump_4_fill_speed).state;
+            if (speed == "55%") return 0.55;
+            if (speed == "65%") return 0.65;
+            if (speed == "75%") return 0.75;
+            if (speed == "85%") return 0.85;
+            if (speed == "100%") return 1.0;
+            return 0.65; // default
+      - if:
+          condition:
+            switch.is_on: pump_4_reverse
+          then:
+            - output.turn_off: motor_d_in3
+            - output.turn_on: motor_d_in4
+          else:
+            - output.turn_on: motor_d_in3
+            - output.turn_off: motor_d_in4
     turn_off_action:
-      - lambda: |-
-          id(motor_d_in3)->turn_off();
-          id(motor_d_in4)->turn_off();
-          id(motor_d_speed)->set_level(0.0);
+      - output.turn_off: motor_d_in3
+      - output.turn_off: motor_d_in4
+      - output.set_level:
+          id: motor_d_speed
+          level: 0.0
 
   # Direction control switches for all pumps
   - platform: template
@@ -373,7 +244,12 @@ switch:
                 id: motor_a_speed
                 level: !lambda |-
                   std::string speed = id(pump_1_drain_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.75;
             - output.turn_off: motor_a_in1
             - output.turn_on: motor_a_in2
     turn_off_action:
@@ -385,7 +261,12 @@ switch:
                 id: motor_a_speed
                 level: !lambda |-
                   std::string speed = id(pump_1_fill_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.65;
             - output.turn_on: motor_a_in1
             - output.turn_off: motor_a_in2
 
@@ -402,7 +283,12 @@ switch:
                 id: motor_b_speed
                 level: !lambda |-
                   std::string speed = id(pump_2_drain_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.75;
             - output.turn_off: motor_b_in3
             - output.turn_on: motor_b_in4
     turn_off_action:
@@ -414,7 +300,12 @@ switch:
                 id: motor_b_speed
                 level: !lambda |-
                   std::string speed = id(pump_2_fill_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.65;
             - output.turn_on: motor_b_in3
             - output.turn_off: motor_b_in4
 
@@ -431,7 +322,12 @@ switch:
                 id: motor_c_speed
                 level: !lambda |-
                   std::string speed = id(pump_3_drain_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.75;
             - output.turn_off: motor_c_in1
             - output.turn_on: motor_c_in2
     turn_off_action:
@@ -443,7 +339,12 @@ switch:
                 id: motor_c_speed
                 level: !lambda |-
                   std::string speed = id(pump_3_fill_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.65;
             - output.turn_on: motor_c_in1
             - output.turn_off: motor_c_in2
 
@@ -460,7 +361,12 @@ switch:
                 id: motor_d_speed
                 level: !lambda |-
                   std::string speed = id(pump_4_drain_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.75;
             - output.turn_off: motor_d_in3
             - output.turn_on: motor_d_in4
     turn_off_action:
@@ -472,7 +378,12 @@ switch:
                 id: motor_d_speed
                 level: !lambda |-
                   std::string speed = id(pump_4_fill_speed).state;
-                  return speed_to_level(speed);
+                  if (speed == "55%") return 0.55;
+                  if (speed == "65%") return 0.65;
+                  if (speed == "75%") return 0.75;
+                  if (speed == "85%") return 0.85;
+                  if (speed == "100%") return 1.0;
+                  return 0.65;
             - output.turn_on: motor_d_in3
             - output.turn_off: motor_d_in4
 
@@ -492,7 +403,7 @@ switch:
       - switch.turn_off: pump_3
       - switch.turn_off: pump_4
 
-  # Bin enable/disable switches
+  # Bin enable/disable switches for sequential cycling (also controls auto scheduling)
   - platform: template
     name: "Bin 1 Enable"
     id: bin_1_enable
@@ -521,7 +432,7 @@ switch:
     restore_mode: RESTORE_DEFAULT_ON
     icon: mdi:water-check
 
-# Fill and drain speed selectors
+# Fill and drain speed selectors for each pump
 select:
   - platform: template
     name: "Pump 1 Fill Speed"
@@ -627,322 +538,285 @@ select:
     initial_option: "75%"
     icon: mdi:gauge
 
-  # Schedule mode selectors
-  - platform: template
-    name: "Bin 1 Schedule Mode"
-    id: bin_1_schedule_mode_select
-    options:
-      - "Interval Days"
-      - "Daily Times"
-    icon: mdi:calendar-clock
-    lambda: |-
-      return id(bin_1_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
-    set_action:
-      then:
-        - lambda: |-
-            std::string mode = x;
-            id(bin_1_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
 
-  - platform: template
-    name: "Bin 2 Schedule Mode"
-    id: bin_2_schedule_mode_select
-    options:
-      - "Interval Days"
-      - "Daily Times"
-    icon: mdi:calendar-clock
-    lambda: |-
-      return id(bin_2_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
-    set_action:
-      then:
-        - lambda: |-
-            std::string mode = x;
-            id(bin_2_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
-
-  - platform: template
-    name: "Bin 3 Schedule Mode"
-    id: bin_3_schedule_mode_select
-    options:
-      - "Interval Days"
-      - "Daily Times"
-    icon: mdi:calendar-clock
-    lambda: |-
-      return id(bin_3_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
-    set_action:
-      then:
-        - lambda: |-
-            std::string mode = x;
-            id(bin_3_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
-
-  - platform: template
-    name: "Bin 4 Schedule Mode"
-    id: bin_4_schedule_mode_select
-    options:
-      - "Interval Days"
-      - "Daily Times"
-    icon: mdi:calendar-clock
-    lambda: |-
-      return id(bin_4_schedule_mode) == 1 ? std::string("Daily Times") : std::string("Interval Days");
-    set_action:
-      then:
-        - lambda: |-
-            std::string mode = x;
-            id(bin_4_schedule_mode) = (mode == "Daily Times") ? 1 : 0;
-
-# Time component with scheduling
+# Time component for automation
 time:
   - platform: homeassistant
     id: homeassistant_time
-    on_time:
-      - seconds: 0
-        minutes: 0
-        then:
-          - lambda: |-
-              auto now = id(homeassistant_time).now();
-              int current_hour = now.hour;
-              int current_day = now.day_of_year;
-              auto current_time = now.timestamp;
-              
-              // Check each bin for schedule matches
-              for (int bin = 1; bin <= 4; bin++) {
-                if (get_bin_enable(bin)) {
-                  bool should_run = false;
-                  int schedule_mode = 0;
-                  
-                  switch(bin) {
-                    case 1: schedule_mode = id(bin_1_schedule_mode); break;
-                    case 2: schedule_mode = id(bin_2_schedule_mode); break;
-                    case 3: schedule_mode = id(bin_3_schedule_mode); break;
-                    case 4: schedule_mode = id(bin_4_schedule_mode); break;
-                  }
-                  
-                  if (schedule_mode == 0) {
-                    // Interval Days mode
-                    int last_run_day = 0;
-                    switch(bin) {
-                      case 1: last_run_day = id(bin_1_last_run_day); break;
-                      case 2: last_run_day = id(bin_2_last_run_day); break;
-                      case 3: last_run_day = id(bin_3_last_run_day); break;
-                      case 4: last_run_day = id(bin_4_last_run_day); break;
-                    }
-                    
-                    int days_since = 0;
-                    if (last_run_day > 0) {
-                      days_since = (current_day - last_run_day + 365) % 365;
-                    }
-                    
-                    float interval_days = get_cycle_interval(bin);
-                    int interval_time = 10;
-                    switch(bin) {
-                      case 1: interval_time = id(bin_1_interval_time); break;
-                      case 2: interval_time = id(bin_2_interval_time); break;
-                      case 3: interval_time = id(bin_3_interval_time); break;
-                      case 4: interval_time = id(bin_4_interval_time); break;
-                    }
-                    
-                    if (current_hour == interval_time && days_since >= (int)interval_days) {
-                      should_run = true;
-                    }
-                  } else {
-                    // Daily Times mode
-                    std::string daily_times = "";
-                    switch(bin) {
-                      case 1: daily_times = id(ha_bin_1_daily_times).state; break;
-                      case 2: daily_times = id(ha_bin_2_daily_times).state; break;
-                      case 3: daily_times = id(ha_bin_3_daily_times).state; break;
-                      case 4: daily_times = id(ha_bin_4_daily_times).state; break;
-                    }
-                    
-                    std::stringstream ss(daily_times);
-                    std::string time_str;
-                    while (std::getline(ss, time_str, ',')) {
-                      time_str.erase(0, time_str.find_first_not_of(" \t"));
-                      time_str.erase(time_str.find_last_not_of(" \t") + 1);
-                      if (!time_str.empty()) {
-                        int time_hour = std::stoi(time_str);
-                        if (current_hour == time_hour) {
-                          should_run = true;
-                          break;
-                        }
-                      }
-                    }
-                  }
-                  
-                  if (should_run) {
-                    set_queue_pending(bin, true);
-                    set_next_cycle_time(bin, current_time);
-                    
-                    if (schedule_mode == 0) {
-                      switch(bin) {
-                        case 1: id(bin_1_last_run_day) = current_day; break;
-                        case 2: id(bin_2_last_run_day) = current_day; break;
-                        case 3: id(bin_3_last_run_day) = current_day; break;
-                        case 4: id(bin_4_last_run_day) = current_day; break;
-                      }
-                    }
-                  }
-                }
-              }
-              
-              // Process queue - only if all pumps are idle
-              if (are_all_pumps_idle()) {
-                for (int bin = 1; bin <= 4; bin++) {
-                  if (get_queue_pending(bin)) {
-                    set_queue_pending(bin, false);
-                    set_last_cycle(bin, now.timestamp);
-                    execute_flood_cycle(bin);
-                    break;
-                  }
-                }
-              }
 
-# Sensors and status
+# Interval-based scheduling for automatic cycles - sequential operation at configurable hour
+interval:
+  - interval: 60s
+    then:
+      - lambda: |-
+          // Sequential pump scheduling - only one pump runs at a time, only at configured hour
+          auto now = id(homeassistant_time).now();
+          auto current_time = now.timestamp;
+          
+          // Only check for cycles at configured hour (Home Assistant should handle timezone)
+          if (now.hour != (int)id(watering_hour).state) {
+            return;
+          }
+          
+          // Check if all pumps are idle before starting next cycle
+          bool all_pumps_idle = (id(pump_1_state) == "Idle" && 
+                                id(pump_2_state) == "Idle" && 
+                                id(pump_3_state) == "Idle" && 
+                                id(pump_4_state) == "Idle");
+          
+          // Only proceed if all pumps are idle
+          if (!all_pumps_idle) {
+            return;
+          }
+          
+          // Check pumps in sequence starting from current_pump_sequence
+          int attempts = 0;
+          while (attempts < 4) {  // Prevent infinite loop
+            int current_pump = id(current_pump_sequence);
+            bool pump_started = false;
+            
+            // Check the current pump in sequence (bin enable and auto schedule are now linked)
+            if (current_pump == 1 && 
+                id(bin_1_enable).state &&
+                current_time - id(pump_1_last_cycle) >= (int)(id(pump_1_cycle_interval).state * 86400)) {
+              id(pump_1_flood_cycle).execute();
+              id(pump_1_last_cycle) = current_time;
+              pump_started = true;
+            }
+            else if (current_pump == 2 && 
+                     id(bin_2_enable).state &&
+                     current_time - id(pump_2_last_cycle) >= (int)(id(pump_2_cycle_interval).state * 86400)) {
+              id(pump_2_flood_cycle).execute();
+              id(pump_2_last_cycle) = current_time;
+              pump_started = true;
+            }
+            else if (current_pump == 3 && 
+                     id(bin_3_enable).state &&
+                     current_time - id(pump_3_last_cycle) >= (int)(id(pump_3_cycle_interval).state * 86400)) {
+              id(pump_3_flood_cycle).execute();
+              id(pump_3_last_cycle) = current_time;
+              pump_started = true;
+            }
+            else if (current_pump == 4 && 
+                     id(bin_4_enable).state &&
+                     current_time - id(pump_4_last_cycle) >= (int)(id(pump_4_cycle_interval).state * 86400)) {
+              id(pump_4_flood_cycle).execute();
+              id(pump_4_last_cycle) = current_time;
+              pump_started = true;
+            }
+            
+            // Move to next pump in sequence
+            id(current_pump_sequence) = (current_pump >= 4) ? 1 : current_pump + 1;
+            
+            // If we started a pump, we're done
+            if (pump_started) {
+              break;
+            }
+            
+            attempts++;
+          }
+
+
+# Sensors for countdown and status
+sensor:
+  - platform: template
+    name: "Bin 1 Next Cycle Countdown"
+    id: pump_1_countdown
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_1_enable).state) {
+        return NAN; // Return NAN when disabled
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      auto configured_hour = (int)id(watering_hour).state;
+      
+      // Calculate time until next watering hour
+      auto current_tm = *localtime(&current_time);
+      time_t target_time;
+      
+      if (current_tm.tm_hour < configured_hour) {
+        // Next watering is today at configured hour
+        current_tm.tm_hour = configured_hour;
+        current_tm.tm_min = 0;
+        current_tm.tm_sec = 0;
+        target_time = mktime(&current_tm);
+      } else {
+        // Next watering is tomorrow at configured hour
+        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      }
+      
+      // Return hours until next watering time
+      auto time_diff = target_time - current_time;
+      return time_diff / 3600.0; // Convert to hours
+    unit_of_measurement: "hours"
+
+  - platform: template
+    name: "Bin 2 Next Cycle Countdown"
+    id: pump_2_countdown
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_2_enable).state) {
+        return NAN;
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      auto configured_hour = (int)id(watering_hour).state;
+      
+      // Calculate time until next watering hour
+      auto current_tm = *localtime(&current_time);
+      time_t target_time;
+      
+      if (current_tm.tm_hour < configured_hour) {
+        // Next watering is today at configured hour
+        current_tm.tm_hour = configured_hour;
+        current_tm.tm_min = 0;
+        current_tm.tm_sec = 0;
+        target_time = mktime(&current_tm);
+      } else {
+        // Next watering is tomorrow at configured hour
+        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      }
+      
+      // Return hours until next watering time
+      auto time_diff = target_time - current_time;
+      return time_diff / 3600.0; // Convert to hours
+    unit_of_measurement: "hours"
+
+  - platform: template
+    name: "Bin 3 Next Cycle Countdown"
+    id: pump_3_countdown
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_3_enable).state) {
+        return NAN;
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      auto configured_hour = (int)id(watering_hour).state;
+      
+      // Calculate time until next watering hour
+      auto current_tm = *localtime(&current_time);
+      time_t target_time;
+      
+      if (current_tm.tm_hour < configured_hour) {
+        // Next watering is today at configured hour
+        current_tm.tm_hour = configured_hour;
+        current_tm.tm_min = 0;
+        current_tm.tm_sec = 0;
+        target_time = mktime(&current_tm);
+      } else {
+        // Next watering is tomorrow at configured hour
+        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      }
+      
+      // Return hours until next watering time
+      auto time_diff = target_time - current_time;
+      return time_diff / 3600.0; // Convert to hours
+    unit_of_measurement: "hours"
+
+  - platform: template
+    name: "Bin 4 Next Cycle Countdown"
+    id: pump_4_countdown
+    icon: mdi:timer-sand
+    update_interval: 60s
+    lambda: |-
+      if (!id(bin_4_enable).state) {
+        return NAN;
+      }
+      
+      auto now = id(homeassistant_time).now();
+      auto current_time = now.timestamp;
+      auto configured_hour = (int)id(watering_hour).state;
+      
+      // Calculate time until next watering hour
+      auto current_tm = *localtime(&current_time);
+      time_t target_time;
+      
+      if (current_tm.tm_hour < configured_hour) {
+        // Next watering is today at configured hour
+        current_tm.tm_hour = configured_hour;
+        current_tm.tm_min = 0;
+        current_tm.tm_sec = 0;
+        target_time = mktime(&current_tm);
+      } else {
+        // Next watering is tomorrow at configured hour
+        target_time = current_time + ((24 - current_tm.tm_hour + configured_hour) * 3600) - (current_tm.tm_min * 60) - current_tm.tm_sec;
+      }
+      
+      // Return hours until next watering time
+      auto time_diff = target_time - current_time;
+      return time_diff / 3600.0; // Convert to hours
+    unit_of_measurement: "hours"
+
+# Text sensors for bin status
 text_sensor:
-  # Home Assistant input_text sensors for daily times
-  - platform: homeassistant
-    id: ha_bin_1_daily_times
-    entity_id: input_text.floodshelf_bin_1_daily_times
-    internal: true
-  - platform: homeassistant
-    id: ha_bin_2_daily_times
-    entity_id: input_text.floodshelf_bin_2_daily_times
-    internal: true
-  - platform: homeassistant
-    id: ha_bin_3_daily_times
-    entity_id: input_text.floodshelf_bin_3_daily_times
-    internal: true
-  - platform: homeassistant
-    id: ha_bin_4_daily_times
-    entity_id: input_text.floodshelf_bin_4_daily_times
-    internal: true
-
-  # Bin status sensors
   - platform: template
     name: "Bin 1 Status"
     id: pump_1_status
     lambda: |-
-      return get_pump_state(1);
+      return id(pump_1_state);
     update_interval: 1s
 
   - platform: template
     name: "Bin 2 Status"
     id: pump_2_status
     lambda: |-
-      return get_pump_state(2);
+      return id(pump_2_state);
     update_interval: 1s
 
   - platform: template
     name: "Bin 3 Status"
     id: pump_3_status
     lambda: |-
-      return get_pump_state(3);
+      return id(pump_3_state);
     update_interval: 1s
 
   - platform: template
     name: "Bin 4 Status"
     id: pump_4_status
     lambda: |-
-      return get_pump_state(4);
+      return id(pump_4_state);
     update_interval: 1s
 
-  # Countdown text sensors
-  - platform: template
-    name: "Bin 1 Next Cycle Countdown Text"
-    id: pump_1_countdown_text
-    icon: mdi:timer-sand
-    update_interval: 60s
-    lambda: |-
-      return {calculate_countdown_text(1)};
-
-  - platform: template
-    name: "Bin 2 Next Cycle Countdown Text"
-    id: pump_2_countdown_text
-    icon: mdi:timer-sand
-    update_interval: 60s
-    lambda: |-
-      return {calculate_countdown_text(2)};
-
-  - platform: template
-    name: "Bin 3 Next Cycle Countdown Text"
-    id: pump_3_countdown_text
-    icon: mdi:timer-sand
-    update_interval: 60s
-    lambda: |-
-      return {calculate_countdown_text(3)};
-
-  - platform: template
-    name: "Bin 4 Next Cycle Countdown Text"
-    id: pump_4_countdown_text
-    icon: mdi:timer-sand
-    update_interval: 60s
-    lambda: |-
-      return {calculate_countdown_text(4)};
-
-  # Queue status
-  - platform: template
-    name: "Queue Status"
-    id: queue_status_sensor
-    icon: mdi:playlist-play
-    lambda: |-
-      std::string status = "";
-      int count = 0;
-      for (int bin = 1; bin <= 4; bin++) {
-        if (get_queue_pending(bin)) { 
-          status += "Bin " + std::to_string(bin) + ", "; 
-          count++; 
-        }
-      }
-      
-      if (count == 0) return {"Empty"};
-      if (status.length() > 2) status = status.substr(0, status.length() - 2);
-      return {status};
-    update_interval: 10s
-
-# Depth and timing settings
+# Pump timing settings only (speed is fixed at 65%)
 number:
-  # Bin 1 Settings
+  # Pump 1 Timing Settings
   - platform: template
-    name: "Bin 1 Target Depth mm"
-    id: bin_1_target_depth
-    min_value: 5
-    max_value: 150
-    step: 5
-    mode: box
-    initial_value: 50
-    optimistic: true
-    icon: mdi:water-plus
-
-  - platform: template
-    name: "Bin 1 Empty Distance mm"
-    id: bin_1_empty_distance
-    min_value: 50
-    max_value: 300
-    step: 5
-    mode: box
-    initial_value: 200
-    optimistic: true
-    icon: mdi:ruler
-
-  - platform: template
-    name: "Bin 1 Max Fill Time Minutes"
-    id: bin_1_max_fill_time
+    name: "Bin 1 Fill Duration Minutes"
+    id: pump_1_fill_duration
     min_value: 1
     max_value: 60
     step: 1
     mode: box
-    initial_value: 15
+    initial_value: 5
     optimistic: true
-    icon: mdi:timer-outline
 
   - platform: template
     name: "Bin 1 Soak Duration Minutes"
     id: pump_1_soak_duration
     min_value: 1
-    max_value: 480
+    max_value: 120
     step: 1
     mode: box
-    initial_value: 60
+    initial_value: 30
     optimistic: true
-    icon: mdi:timer-sand
+
+  - platform: template
+    name: "Bin 1 Drain Duration Minutes"
+    id: pump_1_drain_duration
+    min_value: 1
+    max_value: 60
+    step: 1
+    mode: box
+    initial_value: 10
+    optimistic: true
 
   - platform: template
     name: "Bin 1 Cycle Interval Days"
@@ -951,63 +825,39 @@ number:
     max_value: 30
     step: 1
     mode: box
-    initial_value: 5
+    initial_value: 1
     optimistic: true
 
+  # Bin 2 Timing Settings
   - platform: template
-    name: "Bin 1 Interval Time Hour"
-    id: pump_1_interval_time
-    min_value: 0
-    max_value: 23
-    step: 1
-    mode: box
-    initial_value: 10
-    optimistic: true
-
-  # Bin 2 Settings
-  - platform: template
-    name: "Bin 2 Target Depth mm"
-    id: bin_2_target_depth
-    min_value: 5
-    max_value: 150
-    step: 5
-    mode: box
-    initial_value: 50
-    optimistic: true
-    icon: mdi:water-plus
-
-  - platform: template
-    name: "Bin 2 Empty Distance mm"
-    id: bin_2_empty_distance
-    min_value: 50
-    max_value: 300
-    step: 5
-    mode: box
-    initial_value: 200
-    optimistic: true
-    icon: mdi:ruler
-
-  - platform: template
-    name: "Bin 2 Max Fill Time Minutes"
-    id: bin_2_max_fill_time
+    name: "Bin 2 Fill Duration Minutes"
+    id: pump_2_fill_duration
     min_value: 1
     max_value: 60
     step: 1
     mode: box
-    initial_value: 15
+    initial_value: 5
     optimistic: true
-    icon: mdi:timer-outline
 
   - platform: template
     name: "Bin 2 Soak Duration Minutes"
     id: pump_2_soak_duration
     min_value: 1
-    max_value: 480
+    max_value: 120
     step: 1
     mode: box
-    initial_value: 60
+    initial_value: 30
     optimistic: true
-    icon: mdi:timer-sand
+
+  - platform: template
+    name: "Bin 2 Drain Duration Minutes"
+    id: pump_2_drain_duration
+    min_value: 1
+    max_value: 60
+    step: 1
+    mode: box
+    initial_value: 10
+    optimistic: true
 
   - platform: template
     name: "Bin 2 Cycle Interval Days"
@@ -1016,63 +866,39 @@ number:
     max_value: 30
     step: 1
     mode: box
-    initial_value: 5
+    initial_value: 1
     optimistic: true
 
+  # Bin 3 Timing Settings
   - platform: template
-    name: "Bin 2 Interval Time Hour"
-    id: pump_2_interval_time
-    min_value: 0
-    max_value: 23
-    step: 1
-    mode: box
-    initial_value: 10
-    optimistic: true
-
-  # Bin 3 Settings
-  - platform: template
-    name: "Bin 3 Target Depth mm"
-    id: bin_3_target_depth
-    min_value: 5
-    max_value: 150
-    step: 5
-    mode: box
-    initial_value: 50
-    optimistic: true
-    icon: mdi:water-plus
-
-  - platform: template
-    name: "Bin 3 Empty Distance mm"
-    id: bin_3_empty_distance
-    min_value: 50
-    max_value: 300
-    step: 5
-    mode: box
-    initial_value: 200
-    optimistic: true
-    icon: mdi:ruler
-
-  - platform: template
-    name: "Bin 3 Max Fill Time Minutes"
-    id: bin_3_max_fill_time
+    name: "Bin 3 Fill Duration Minutes"
+    id: pump_3_fill_duration
     min_value: 1
     max_value: 60
     step: 1
     mode: box
-    initial_value: 15
+    initial_value: 5
     optimistic: true
-    icon: mdi:timer-outline
 
   - platform: template
     name: "Bin 3 Soak Duration Minutes"
     id: pump_3_soak_duration
     min_value: 1
-    max_value: 480
+    max_value: 120
     step: 1
     mode: box
-    initial_value: 60
+    initial_value: 30
     optimistic: true
-    icon: mdi:timer-sand
+
+  - platform: template
+    name: "Bin 3 Drain Duration Minutes"
+    id: pump_3_drain_duration
+    min_value: 1
+    max_value: 60
+    step: 1
+    mode: box
+    initial_value: 10
+    optimistic: true
 
   - platform: template
     name: "Bin 3 Cycle Interval Days"
@@ -1081,63 +907,39 @@ number:
     max_value: 30
     step: 1
     mode: box
-    initial_value: 5
+    initial_value: 1
     optimistic: true
 
+  # Bin 4 Timing Settings
   - platform: template
-    name: "Bin 3 Interval Time Hour"
-    id: pump_3_interval_time
-    min_value: 0
-    max_value: 23
-    step: 1
-    mode: box
-    initial_value: 10
-    optimistic: true
-
-  # Bin 4 Settings
-  - platform: template
-    name: "Bin 4 Target Depth mm"
-    id: bin_4_target_depth
-    min_value: 5
-    max_value: 150
-    step: 5
-    mode: box
-    initial_value: 50
-    optimistic: true
-    icon: mdi:water-plus
-
-  - platform: template
-    name: "Bin 4 Empty Distance mm"
-    id: bin_4_empty_distance
-    min_value: 50
-    max_value: 300
-    step: 5
-    mode: box
-    initial_value: 200
-    optimistic: true
-    icon: mdi:ruler
-
-  - platform: template
-    name: "Bin 4 Max Fill Time Minutes"
-    id: bin_4_max_fill_time
+    name: "Bin 4 Fill Duration Minutes"
+    id: pump_4_fill_duration
     min_value: 1
     max_value: 60
     step: 1
     mode: box
-    initial_value: 15
+    initial_value: 5
     optimistic: true
-    icon: mdi:timer-outline
 
   - platform: template
     name: "Bin 4 Soak Duration Minutes"
     id: pump_4_soak_duration
     min_value: 1
-    max_value: 480
+    max_value: 120
     step: 1
     mode: box
-    initial_value: 60
+    initial_value: 30
     optimistic: true
-    icon: mdi:timer-sand
+
+  - platform: template
+    name: "Bin 4 Drain Duration Minutes"
+    id: pump_4_drain_duration
+    min_value: 1
+    max_value: 60
+    step: 1
+    mode: box
+    initial_value: 10
+    optimistic: true
 
   - platform: template
     name: "Bin 4 Cycle Interval Days"
@@ -1146,17 +948,18 @@ number:
     max_value: 30
     step: 1
     mode: box
-    initial_value: 5
+    initial_value: 1
     optimistic: true
 
+  # Global watering time setting
   - platform: template
-    name: "Bin 4 Interval Time Hour"
-    id: pump_4_interval_time
+    name: "Daily Watering Hour (24h format)"
+    id: watering_hour
     min_value: 0
     max_value: 23
     step: 1
     mode: box
-    initial_value: 10
+    initial_value: 9
     optimistic: true
 
 # Manual cycle buttons
@@ -1165,118 +968,65 @@ button:
     name: "Start Bin 1 Cycle"
     id: start_pump_1_cycle
     on_press:
-      - lambda: |-
-          auto current_time = id(homeassistant_time).now().timestamp;
-          set_last_cycle(1, current_time);
-          set_next_cycle_time(1, current_time);
-          set_queue_pending(1, false);
+      - lambda: "id(pump_1_last_cycle) = id(homeassistant_time).now().timestamp;"
       - script.execute: pump_1_flood_cycle
 
   - platform: template
     name: "Start Bin 2 Cycle"
     id: start_pump_2_cycle
     on_press:
-      - lambda: |-
-          auto current_time = id(homeassistant_time).now().timestamp;
-          set_last_cycle(2, current_time);
-          set_next_cycle_time(2, current_time);
-          set_queue_pending(2, false);
+      - lambda: "id(pump_2_last_cycle) = id(homeassistant_time).now().timestamp;"
       - script.execute: pump_2_flood_cycle
 
   - platform: template
     name: "Start Bin 3 Cycle"
     id: start_pump_3_cycle
     on_press:
-      - lambda: |-
-          auto current_time = id(homeassistant_time).now().timestamp;
-          set_last_cycle(3, current_time);
-          set_next_cycle_time(3, current_time);
-          set_queue_pending(3, false);
+      - lambda: "id(pump_3_last_cycle) = id(homeassistant_time).now().timestamp;"
       - script.execute: pump_3_flood_cycle
 
   - platform: template
     name: "Start Bin 4 Cycle"
     id: start_pump_4_cycle
     on_press:
-      - lambda: |-
-          auto current_time = id(homeassistant_time).now().timestamp;
-          set_last_cycle(4, current_time);
-          set_next_cycle_time(4, current_time);
-          set_queue_pending(4, false);
+      - lambda: "id(pump_4_last_cycle) = id(homeassistant_time).now().timestamp;"
       - script.execute: pump_4_flood_cycle
 
-  - platform: template
-    name: "Clear All Pending Cycles"
-    id: clear_queue
-    icon: mdi:playlist-remove
-    on_press:
-      - lambda: |-
-          for (int bin = 1; bin <= 4; bin++) {
-            set_queue_pending(bin, false);
-          }
-
-# Depth-based flood cycle scripts
+# Scripts for flood cycles
 script:
   - id: pump_1_flood_cycle
-    mode: single
     then:
       - globals.set:
           id: pump_1_state
           value: '"Filling"'
-      - logger.log: "Bin 1: Starting depth-based fill cycle"
       - switch.turn_on: pump_1_reverse
       - switch.turn_on: pump_1
-      # Wait for target depth or max time
-      - wait_until:
-          timeout: !lambda "return (int)(id(bin_1_max_fill_time).state * 60 * 1000);"
-          condition:
-            lambda: |-
-              float target = id(bin_1_target_depth).state;
-              float current = calculate_water_depth(1, id(bin_1_distance).state);
-              return current >= target;
+      - delay: !lambda "return (int)(id(pump_1_fill_duration).state * 60 * 1000);"
       - switch.turn_off: pump_1
       - globals.set:
           id: pump_1_state
           value: '"Soaking"'
-      - logger.log: "Bin 1: Target depth reached, soaking"
       - delay: !lambda "return (int)(id(pump_1_soak_duration).state * 60 * 1000);"
       - globals.set:
           id: pump_1_state
           value: '"Draining"'
-      - logger.log: "Bin 1: Starting drain"
       - switch.turn_off: pump_1_reverse
       - switch.turn_on: pump_1
-      # Drain until water is gone
-      - wait_until:
-          timeout: 20min
-          condition:
-            lambda: |-
-              float empty_distance = id(bin_1_empty_distance).state;
-              float current_distance = id(bin_1_distance).state;
-              return current_distance >= (empty_distance - 5);
+      - delay: !lambda "return (int)(id(pump_1_drain_duration).state * 60 * 1000);"
       - switch.turn_off: pump_1
       - switch.turn_off: pump_1_reverse
       - globals.set:
           id: pump_1_state
           value: '"Idle"'
-      - logger.log: "Bin 1: Cycle complete"
 
   - id: pump_2_flood_cycle
-    mode: single
     then:
       - globals.set:
           id: pump_2_state
           value: '"Filling"'
-      - logger.log: "Bin 2: Starting depth-based fill cycle"
       - switch.turn_on: pump_2_reverse
       - switch.turn_on: pump_2
-      - wait_until:
-          timeout: !lambda "return (int)(id(bin_2_max_fill_time).state * 60 * 1000);"
-          condition:
-            lambda: |-
-              float target = id(bin_2_target_depth).state;
-              float current = calculate_water_depth(2, id(bin_1_distance).state);
-              return current >= target;
+      - delay: !lambda "return (int)(id(pump_2_fill_duration).state * 60 * 1000);"
       - switch.turn_off: pump_2
       - globals.set:
           id: pump_2_state
@@ -1287,13 +1037,7 @@ script:
           value: '"Draining"'
       - switch.turn_off: pump_2_reverse
       - switch.turn_on: pump_2
-      - wait_until:
-          timeout: 20min
-          condition:
-            lambda: |-
-              float empty_distance = id(bin_2_empty_distance).state;
-              float current_distance = id(bin_1_distance).state;
-              return current_distance >= (empty_distance - 5);
+      - delay: !lambda "return (int)(id(pump_2_drain_duration).state * 60 * 1000);"
       - switch.turn_off: pump_2
       - switch.turn_off: pump_2_reverse
       - globals.set:
@@ -1301,21 +1045,13 @@ script:
           value: '"Idle"'
 
   - id: pump_3_flood_cycle
-    mode: single
     then:
       - globals.set:
           id: pump_3_state
           value: '"Filling"'
-      - logger.log: "Bin 3: Starting depth-based fill cycle"
       - switch.turn_on: pump_3_reverse
       - switch.turn_on: pump_3
-      - wait_until:
-          timeout: !lambda "return (int)(id(bin_3_max_fill_time).state * 60 * 1000);"
-          condition:
-            lambda: |-
-              float target = id(bin_3_target_depth).state;
-              float current = calculate_water_depth(3, id(bin_1_distance).state);
-              return current >= target;
+      - delay: !lambda "return (int)(id(pump_3_fill_duration).state * 60 * 1000);"
       - switch.turn_off: pump_3
       - globals.set:
           id: pump_3_state
@@ -1326,13 +1062,7 @@ script:
           value: '"Draining"'
       - switch.turn_off: pump_3_reverse
       - switch.turn_on: pump_3
-      - wait_until:
-          timeout: 20min
-          condition:
-            lambda: |-
-              float empty_distance = id(bin_3_empty_distance).state;
-              float current_distance = id(bin_1_distance).state;
-              return current_distance >= (empty_distance - 5);
+      - delay: !lambda "return (int)(id(pump_3_drain_duration).state * 60 * 1000);"
       - switch.turn_off: pump_3
       - switch.turn_off: pump_3_reverse
       - globals.set:
@@ -1340,21 +1070,13 @@ script:
           value: '"Idle"'
 
   - id: pump_4_flood_cycle
-    mode: single
     then:
       - globals.set:
           id: pump_4_state
           value: '"Filling"'
-      - logger.log: "Bin 4: Starting depth-based fill cycle"
       - switch.turn_on: pump_4_reverse
       - switch.turn_on: pump_4
-      - wait_until:
-          timeout: !lambda "return (int)(id(bin_4_max_fill_time).state * 60 * 1000);"
-          condition:
-            lambda: |-
-              float target = id(bin_4_target_depth).state;
-              float current = calculate_water_depth(4, id(bin_1_distance).state);
-              return current >= target;
+      - delay: !lambda "return (int)(id(pump_4_fill_duration).state * 60 * 1000);"
       - switch.turn_off: pump_4
       - globals.set:
           id: pump_4_state
@@ -1365,16 +1087,9 @@ script:
           value: '"Draining"'
       - switch.turn_off: pump_4_reverse
       - switch.turn_on: pump_4
-      - wait_until:
-          timeout: 20min
-          condition:
-            lambda: |-
-              float empty_distance = id(bin_4_empty_distance).state;
-              float current_distance = id(bin_1_distance).state;
-              return current_distance >= (empty_distance - 5);
+      - delay: !lambda "return (int)(id(pump_4_drain_duration).state * 60 * 1000);"
       - switch.turn_off: pump_4
       - switch.turn_off: pump_4_reverse
       - globals.set:
           id: pump_4_state
           value: '"Idle"'
-

@@ -7,117 +7,58 @@ views:
           - type: heading
             heading: Orchid Shelf Flood Irrigation System
           - type: entities
-            title: System Status & Queue
+            title: System Status
             entities:
-              - entity: sensor.floodshelf_queue_status
-                name: Current Queue
-                icon: mdi:playlist-play
-              - entity: sensor.floodshelf_pending_queue_count
-                name: Pending Cycles
-                icon: mdi:format-list-numbered
               - entity: sensor.floodshelf_bin_1_status
                 name: Zone 1 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_1_next_cycle_countdown_text
+              - entity: sensor.floodshelf_bin_1_next_cycle_countdown
                 name: Zone 1 Next Watering Time
                 icon: mdi:timer-sand
               - entity: sensor.floodshelf_bin_2_status
                 name: Zone 2 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_2_next_cycle_countdown_text
+              - entity: sensor.floodshelf_bin_2_next_cycle_countdown
                 name: Zone 2 Next Watering Time
                 icon: mdi:timer-sand
               - entity: sensor.floodshelf_bin_3_status
                 name: Zone 3 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_3_next_cycle_countdown_text
+              - entity: sensor.floodshelf_bin_3_next_cycle_countdown
                 name: Zone 3 Next Watering Time
                 icon: mdi:timer-sand
               - entity: sensor.floodshelf_bin_4_status
                 name: Zone 4 Status
                 icon: mdi:state-machine
-              - entity: sensor.floodshelf_bin_4_next_cycle_countdown_text
+              - entity: sensor.floodshelf_bin_4_next_cycle_countdown
                 name: Zone 4 Next Watering Time
                 icon: mdi:timer-sand
             state_color: true
           - type: entities
-            title: Water Level Monitoring
+            title: Master Controls
             entities:
-              - entity: sensor.floodshelf_bin_1_water_level
-                name: Zone 1 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_1_water_level_status
-                name: Zone 1 Water Status
-                icon: mdi:water-check
-              - entity: sensor.floodshelf_bin_2_water_level
-                name: Zone 2 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_2_water_level_status
-                name: Zone 2 Water Status
-                icon: mdi:water-check
-              - entity: sensor.floodshelf_bin_3_water_level
-                name: Zone 3 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_3_water_level_status
-                name: Zone 3 Water Status
-                icon: mdi:water-check
-              - entity: sensor.floodshelf_bin_4_water_level
-                name: Zone 4 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_4_water_level_status
-                name: Zone 4 Water Status
-                icon: mdi:water-check
-            state_color: true
-          - type: entities
-            title: Queue & Master Controls
-            entities:
-              - entity: sensor.floodshelf_queue_status
-                name: Current Queue
-                icon: mdi:playlist-play
-              - entity: sensor.floodshelf_pending_queue_count
-                name: Pending Cycles Count
-                icon: mdi:format-list-numbered
               - entity: switch.floodshelf_531e4c_all_pumps_on_off
                 name: All Pumps Master Switch
                 icon: mdi:water-pump
-              - entity: button.floodshelf_clear_all_pending_cycles
-                name: Clear All Pending Cycles
-                icon: mdi:playlist-remove
-              - entity: button.floodshelf_refresh_countdowns
-                name: Refresh Countdowns
-                icon: mdi:refresh
+              - entity: number.floodshelf_daily_watering_hour_24h_format
+                name: Daily Watering Hour (24h)
+                icon: mdi:clock-time-eight
             state_color: true
           - type: entities
-            title: Zone Enable Controls
+            title: Zone Enable/Auto Schedule Controls
             entities:
               - entity: switch.floodshelf_bin_1_enable
-                name: Zone 1 Enable
+                name: Zone 1 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
               - entity: switch.floodshelf_bin_2_enable
-                name: Zone 2 Enable
+                name: Zone 2 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
               - entity: switch.floodshelf_bin_3_enable
-                name: Zone 3 Enable
+                name: Zone 3 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
               - entity: switch.floodshelf_bin_4_enable
-                name: Zone 4 Enable
+                name: Zone 4 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
-            state_color: true
-          - type: entities
-            title: Height Control Mode
-            entities:
-              - entity: switch.floodshelf_bin_1_height_control_mode
-                name: Zone 1 Height Control
-                icon: mdi:water-percent
-              - entity: switch.floodshelf_bin_2_height_control_mode
-                name: Zone 2 Height Control
-                icon: mdi:water-percent
-              - entity: switch.floodshelf_bin_3_height_control_mode
-                name: Zone 3 Height Control
-                icon: mdi:water-percent
-              - entity: switch.floodshelf_bin_4_height_control_mode
-                name: Zone 4 Height Control
-                icon: mdi:water-percent
             state_color: true
           - type: entities
             title: Quick Cycle Triggers
@@ -170,74 +111,27 @@ views:
                 icon: mdi:water-minus
             state_color: true
           - type: entities
-            title: Zone 1 Water Level Monitoring
-            entities:
-              - entity: sensor.floodshelf_bin_1_water_level
-                name: Current Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_1_water_level_status
-                name: Water Level Status
-                icon: mdi:water-check
-            state_color: true
-          - type: entities
-            title: Zone 1 Height Control Settings
-            entities:
-              - entity: switch.floodshelf_bin_1_height_control_mode
-                name: Height Control Mode
-                icon: mdi:water-percent
-              - entity: number.floodshelf_bin_1_target_fill_height
-                name: Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_1_drain_height
-                name: Drain Height (cm)
-                icon: mdi:water-minus
-            state_color: true
-          - type: entities
             title: Zone 1 Cycle Timing Settings
             entities:
+              - entity: number.floodshelf_bin_1_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
               - entity: number.floodshelf_bin_1_soak_duration_minutes
                 name: Soak Duration (minutes)
                 icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_1_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_1_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
           - type: entities
-            title: Zone 1 Schedule Mode
+            title: Zone 1 Enable & Auto Schedule
             entities:
-              - entity: select.floodshelf_bin_1_schedule_mode
-                name: Schedule Mode
-                icon: mdi:calendar-clock
+              - entity: switch.floodshelf_bin_1_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
             state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_1_schedule_mode
-                state: "Interval Days"
-            card:
-              type: entities
-              title: Zone 1 Interval Settings
-              entities:
-                - entity: number.floodshelf_bin_1_cycle_interval_days
-                  name: Cycle Interval (days)
-                  icon: mdi:timer-sand
-                - entity: number.floodshelf_bin_1_interval_time_hour
-                  name: Interval Time (hour)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_1_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_1_schedule_mode
-                state: "Daily Times"
-            card:
-              type: entities
-              title: Zone 1 Daily Times Settings
-              entities:
-                - entity: input_text.floodshelf_bin_1_daily_times
-                  name: Daily Times (comma-separated)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_1_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
           - type: entities
             title: Zone 1 Cycle Control
             entities:
@@ -280,74 +174,27 @@ views:
                 icon: mdi:water-minus
             state_color: true
           - type: entities
-            title: Zone 2 Water Level Monitoring
-            entities:
-              - entity: sensor.floodshelf_bin_2_water_level
-                name: Current Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_2_water_level_status
-                name: Water Level Status
-                icon: mdi:water-check
-            state_color: true
-          - type: entities
-            title: Zone 2 Height Control Settings
-            entities:
-              - entity: switch.floodshelf_bin_2_height_control_mode
-                name: Height Control Mode
-                icon: mdi:water-percent
-              - entity: number.floodshelf_bin_2_target_fill_height
-                name: Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_2_drain_height
-                name: Drain Height (cm)
-                icon: mdi:water-minus
-            state_color: true
-          - type: entities
             title: Zone 2 Cycle Timing Settings
             entities:
+              - entity: number.floodshelf_bin_2_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
               - entity: number.floodshelf_bin_2_soak_duration_minutes
                 name: Soak Duration (minutes)
                 icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_2_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_2_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
           - type: entities
-            title: Zone 2 Schedule Mode
+            title: Zone 2 Enable & Auto Schedule
             entities:
-              - entity: select.floodshelf_bin_2_schedule_mode
-                name: Schedule Mode
-                icon: mdi:calendar-clock
+              - entity: switch.floodshelf_bin_2_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
             state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_2_schedule_mode
-                state: "Interval Days"
-            card:
-              type: entities
-              title: Zone 2 Interval Settings
-              entities:
-                - entity: number.floodshelf_bin_2_cycle_interval_days
-                  name: Cycle Interval (days)
-                  icon: mdi:timer-sand
-                - entity: number.floodshelf_bin_2_interval_time_hour
-                  name: Interval Time (hour)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_2_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_2_schedule_mode
-                state: "Daily Times"
-            card:
-              type: entities
-              title: Zone 2 Daily Times Settings
-              entities:
-                - entity: input_text.floodshelf_bin_2_daily_times
-                  name: Daily Times (comma-separated)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_2_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
           - type: entities
             title: Zone 2 Cycle Control
             entities:
@@ -390,74 +237,27 @@ views:
                 icon: mdi:water-minus
             state_color: true
           - type: entities
-            title: Zone 3 Water Level Monitoring
-            entities:
-              - entity: sensor.floodshelf_bin_3_water_level
-                name: Current Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_3_water_level_status
-                name: Water Level Status
-                icon: mdi:water-check
-            state_color: true
-          - type: entities
-            title: Zone 3 Height Control Settings
-            entities:
-              - entity: switch.floodshelf_bin_3_height_control_mode
-                name: Height Control Mode
-                icon: mdi:water-percent
-              - entity: number.floodshelf_bin_3_target_fill_height
-                name: Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_3_drain_height
-                name: Drain Height (cm)
-                icon: mdi:water-minus
-            state_color: true
-          - type: entities
             title: Zone 3 Cycle Timing Settings
             entities:
+              - entity: number.floodshelf_bin_3_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
               - entity: number.floodshelf_bin_3_soak_duration_minutes
                 name: Soak Duration (minutes)
                 icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_3_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_3_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
           - type: entities
-            title: Zone 3 Schedule Mode
+            title: Zone 3 Enable & Auto Schedule
             entities:
-              - entity: select.floodshelf_bin_3_schedule_mode
-                name: Schedule Mode
-                icon: mdi:calendar-clock
+              - entity: switch.floodshelf_bin_3_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
             state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_3_schedule_mode
-                state: "Interval Days"
-            card:
-              type: entities
-              title: Zone 3 Interval Settings
-              entities:
-                - entity: number.floodshelf_bin_3_cycle_interval_days
-                  name: Cycle Interval (days)
-                  icon: mdi:timer-sand
-                - entity: number.floodshelf_bin_3_interval_time_hour
-                  name: Interval Time (hour)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_3_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_3_schedule_mode
-                state: "Daily Times"
-            card:
-              type: entities
-              title: Zone 3 Daily Times Settings
-              entities:
-                - entity: input_text.floodshelf_bin_3_daily_times
-                  name: Daily Times (comma-separated)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_3_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
           - type: entities
             title: Zone 3 Cycle Control
             entities:
@@ -500,74 +300,27 @@ views:
                 icon: mdi:water-minus
             state_color: true
           - type: entities
-            title: Zone 4 Water Level Monitoring
-            entities:
-              - entity: sensor.floodshelf_bin_4_water_level
-                name: Current Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_4_water_level_status
-                name: Water Level Status
-                icon: mdi:water-check
-            state_color: true
-          - type: entities
-            title: Zone 4 Height Control Settings
-            entities:
-              - entity: switch.floodshelf_bin_4_height_control_mode
-                name: Height Control Mode
-                icon: mdi:water-percent
-              - entity: number.floodshelf_bin_4_target_fill_height
-                name: Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_4_drain_height
-                name: Drain Height (cm)
-                icon: mdi:water-minus
-            state_color: true
-          - type: entities
             title: Zone 4 Cycle Timing Settings
             entities:
+              - entity: number.floodshelf_bin_4_fill_duration_minutes
+                name: Fill Duration (minutes)
+                icon: mdi:water-plus
               - entity: number.floodshelf_bin_4_soak_duration_minutes
                 name: Soak Duration (minutes)
                 icon: mdi:clock-time-eight
+              - entity: number.floodshelf_bin_4_drain_duration_minutes
+                name: Drain Duration (minutes)
+                icon: mdi:water-minus
+              - entity: number.floodshelf_bin_4_cycle_interval_days
+                name: Cycle Interval (days)
+                icon: mdi:timer-sand
           - type: entities
-            title: Zone 4 Schedule Mode
+            title: Zone 4 Enable & Auto Schedule
             entities:
-              - entity: select.floodshelf_bin_4_schedule_mode
-                name: Schedule Mode
-                icon: mdi:calendar-clock
+              - entity: switch.floodshelf_bin_4_enable
+                name: Zone Enable & Auto Schedule
+                icon: mdi:timer-check-outline
             state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_4_schedule_mode
-                state: "Interval Days"
-            card:
-              type: entities
-              title: Zone 4 Interval Settings
-              entities:
-                - entity: number.floodshelf_bin_4_cycle_interval_days
-                  name: Cycle Interval (days)
-                  icon: mdi:timer-sand
-                - entity: number.floodshelf_bin_4_interval_time_hour
-                  name: Interval Time (hour)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_4_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
-          - type: conditional
-            conditions:
-              - entity: select.floodshelf_bin_4_schedule_mode
-                state: "Daily Times"
-            card:
-              type: entities
-              title: Zone 4 Daily Times Settings
-              entities:
-                - entity: input_text.floodshelf_bin_4_daily_times
-                  name: Daily Times (comma-separated)
-                  icon: mdi:clock-outline
-                - entity: switch.floodshelf_bin_4_enable
-                  name: Zone Enable
-                  icon: mdi:timer-check-outline
-              state_color: true
           - type: entities
             title: Zone 4 Cycle Control
             entities:
@@ -586,14 +339,8 @@ views:
               Complete System Control (Separate Fill/Drain Speeds & Auto
               Schedule)
           - type: entities
-            title: All Zone Status & Queue
+            title: All Zone Status
             entities:
-              - entity: sensor.floodshelf_queue_status
-                name: Current Queue
-                icon: mdi:playlist-play
-              - entity: sensor.floodshelf_pending_queue_count
-                name: Pending Cycles
-                icon: mdi:format-list-numbered
               - entity: sensor.floodshelf_bin_1_status
                 name: Zone 1 Status
                 icon: mdi:state-machine
@@ -618,34 +365,6 @@ views:
               - entity: sensor.floodshelf_bin_4_next_cycle_countdown
                 name: Zone 4 Next Watering Time
                 icon: mdi:timer-sand
-            state_color: true
-          - type: entities
-            title: Water Level Monitoring
-            entities:
-              - entity: sensor.floodshelf_bin_1_water_level
-                name: Zone 1 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_1_water_level_status
-                name: Zone 1 Water Status
-                icon: mdi:water-check
-              - entity: sensor.floodshelf_bin_2_water_level
-                name: Zone 2 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_2_water_level_status
-                name: Zone 2 Water Status
-                icon: mdi:water-check
-              - entity: sensor.floodshelf_bin_3_water_level
-                name: Zone 3 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_3_water_level_status
-                name: Zone 3 Water Status
-                icon: mdi:water-check
-              - entity: sensor.floodshelf_bin_4_water_level
-                name: Zone 4 Water Level
-                icon: mdi:water-percent
-              - entity: sensor.floodshelf_bin_4_water_level_status
-                name: Zone 4 Water Status
-                icon: mdi:water-check
             state_color: true
           - type: entities
             title: Individual Pump Controls
@@ -696,39 +415,23 @@ views:
                 icon: mdi:play-circle
             state_color: true
           - type: entities
-            title: Zone Enable Controls
+            title: Zone Enable & Auto Schedule Controls
             entities:
               - entity: switch.floodshelf_bin_1_enable
-                name: Zone 1 Enable
+                name: Zone 1 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
               - entity: switch.floodshelf_bin_2_enable
-                name: Zone 2 Enable
+                name: Zone 2 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
               - entity: switch.floodshelf_bin_3_enable
-                name: Zone 3 Enable
+                name: Zone 3 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
               - entity: switch.floodshelf_bin_4_enable
-                name: Zone 4 Enable
+                name: Zone 4 Enable & Auto Schedule
                 icon: mdi:timer-check-outline
-              - entity: button.floodshelf_clear_all_pending_cycles
-                name: Clear All Pending Cycles
-                icon: mdi:playlist-remove
-            state_color: true
-          - type: entities
-            title: Height Control Mode
-            entities:
-              - entity: switch.floodshelf_bin_1_height_control_mode
-                name: Zone 1 Height Control
-                icon: mdi:water-percent
-              - entity: switch.floodshelf_bin_2_height_control_mode
-                name: Zone 2 Height Control
-                icon: mdi:water-percent
-              - entity: switch.floodshelf_bin_3_height_control_mode
-                name: Zone 3 Height Control
-                icon: mdi:water-percent
-              - entity: switch.floodshelf_bin_4_height_control_mode
-                name: Zone 4 Height Control
-                icon: mdi:water-percent
+              - entity: number.floodshelf_daily_watering_hour_24h_format
+                name: Daily Watering Hour (24h)
+                icon: mdi:clock-time-eight
             state_color: true
           - type: entities
             title: Fill Speed Controls
@@ -760,34 +463,6 @@ views:
                 icon: mdi:water-minus
               - entity: select.floodshelf_pump_4_drain_speed
                 name: Zone 4 Drain Speed
-                icon: mdi:water-minus
-            state_color: true
-          - type: entities
-            title: Height Control Settings
-            entities:
-              - entity: number.floodshelf_bin_1_target_fill_height
-                name: Zone 1 Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_1_drain_height
-                name: Zone 1 Drain Height (cm)
-                icon: mdi:water-minus
-              - entity: number.floodshelf_bin_2_target_fill_height
-                name: Zone 2 Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_2_drain_height
-                name: Zone 2 Drain Height (cm)
-                icon: mdi:water-minus
-              - entity: number.floodshelf_bin_3_target_fill_height
-                name: Zone 3 Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_3_drain_height
-                name: Zone 3 Drain Height (cm)
-                icon: mdi:water-minus
-              - entity: number.floodshelf_bin_4_target_fill_height
-                name: Zone 4 Target Fill Height (cm)
-                icon: mdi:water-plus
-              - entity: number.floodshelf_bin_4_drain_height
-                name: Zone 4 Drain Height (cm)
                 icon: mdi:water-minus
             state_color: true
         column_span: 3
